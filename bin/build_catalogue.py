@@ -124,9 +124,11 @@ def main(args):
         logger.setLevel('DEBUG')
     logger.debug(args)
 
-    file_info = extract_from_file(args.refimage)
+    file_info = list(extract_from_file(args.refimage))
+
     with connect_to_database(args) as cursor:
         upload_info(file_info, cursor)
+
     if args.fits_out is not None:
         render_fits_catalogue(file_info, args.fits_out)
 
