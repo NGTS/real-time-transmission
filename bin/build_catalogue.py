@@ -11,6 +11,7 @@ from collections import namedtuple
 import tempfile
 import subprocess as sp
 import numpy as np
+from scipy.spatial import KDTree
 
 logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
@@ -40,6 +41,18 @@ def source_detect(fname, n_pixels=3, threshold=7):
             return infile[1].data
 
 
+def isolated_index(x, y, radius=6.):
+    tree = KDTree(np.vstack([x, y]).T)
+    index = np.zeros_like(x, dtype=bool)
+    for i in np.arange(x.size):
+        within = tree.query_ball_point((x[i], y[i]), radius)
+        # There should be only one star (the target) within `radius` pixels
+        if len(within) == 1:
+            index[i] = True
+
+    return index
+
+
 def filter_source_table(source_table):
     logger.info('Filtering source list')
     # Build up an index
@@ -61,6 +74,10 @@ def filter_source_table(source_table):
                                                  45E3 * psf_size)
     index &= (source_table['Aper_flux_3'] >= flux_lim_low)
     index &= (source_table['Aper_flux_3'] <= flux_lim_high)
+
+    # Only include isolated stars
+    index &= isolated_index(source_table['X_coordinate'],
+                            source_table['Y_coordinate'])
 
     # Return the final catalogue
     return source_table[index]
