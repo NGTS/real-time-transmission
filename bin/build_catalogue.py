@@ -148,12 +148,22 @@ def extract_from_file(fname, region_filename):
 
 @contextmanager
 def connect_to_database(args):
-    with pymysql.connect(user=args.db_user,
-                         unix_socket=args.db_socket,
-                         db=args.db_name) as cursor:
-        logger.debug('Connected to database')
-        yield cursor
-        logger.debug('Closing database connection')
+    if args.db_host is not None:
+        with pymysql.connect(user=args.db_user,
+                            host=args.db_host,
+                            db=args.db_name) as cursor:
+            logger.debug('Connected to database')
+            yield cursor
+            logger.debug('Closing database connection')
+    else:
+        socket = args.db_socket if args.db_socket is not None else '/var/lib/mysql/mysql.sock'
+        with pymysql.connect(user=args.db_user,
+                            unix_socket=socket,
+                            db=args.db_name) as cursor:
+            logger.debug('Connected to database')
+            yield cursor
+            logger.debug('Closing database connection')
+
 
 
 def upload_info(extracted_data, cursor):
@@ -235,8 +245,10 @@ if __name__ == '__main__':
     parser.add_argument('refimage')
     parser.add_argument('--db-socket',
                         required=False,
-                        default='/var/lib/mysql/mysql.sock',
                         help='Socket to connect to')
+    parser.add_argument('--db-host',
+                        required=False,
+                        help='Host to connect to')
     parser.add_argument('--db-user',
                         required=False,
                         default='ops',
