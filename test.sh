@@ -2,13 +2,17 @@
 
 set -eu
 
+DB_SOCKET=/private/tmp/mysql.sock
+DB_USER=ops
+DB_NAME=ngts_ops
+
 clear_database() {
-    mysql -u sw -h localhost ngts_ops -e 'drop table if exists transmission_sources'
+    mysql -u ${DB_USER} -S ${DB_SOCKET} ${DB_NAME} -e 'drop table if exists transmission_sources'
 }
 
 initialise_schema() {
     echo Initialising schema
-    mysql -u sw -h localhost ngts_ops -e 'create table transmission_sources (
+    mysql -u ${DB_USER} -S ${DB_SOCKET} ${DB_NAME} -e 'create table transmission_sources (
     id integer primary key auto_increment,
     image_id bigint not null,
     x_coordinate float not null,
@@ -24,9 +28,9 @@ initialise_schema() {
 
 extract_sources() {
     python ./bin/build_catalogue.py data/refimage.fits \
-        --db-socket /private/tmp/mysql.sock \
-        --db-user ops \
-        --db-name ngts_ops \
+        --db-socket ${DB_SOCKET} \
+        --db-user ${DB_USER} \
+        --db-name ${DB_NAME} \
         --fits-out /tmp/catalogue.fits \
         --verbose
 }
