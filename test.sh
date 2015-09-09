@@ -9,7 +9,8 @@ clear_database() {
 initialise_schema() {
     echo Initialising schema
     mysql -u sw -h localhost ngts_ops -e 'create table transmission_sources (
-    image_id bigint primary key,
+    id integer primary key auto_increment,
+    image_id bigint not null,
     x_coordinate float not null,
     y_coordinate float not null,
     inc_prescan tinyint default 1,
@@ -25,7 +26,8 @@ extract_sources() {
     python ./bin/build_catalogue.py data/refimage.fits \
         --db-socket /private/tmp/mysql.sock \
         --db-user ops \
-        --db-name ngts_ops
+        --db-name ngts_ops \
+        --fits-out /tmp/catalogue.fits
 }
 
 main() {

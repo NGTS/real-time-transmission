@@ -16,7 +16,7 @@ logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
 
 TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry', [
-    'image_id', 'x', 'y', 'inc_prescan', 'flux'
+    'image_id', 'x_coordinate', 'y_coordinate', 'inc_prescan', 'flux_adu',
 ])
 
 memory = Memory(cachedir='.tmp')
@@ -49,13 +49,14 @@ def extract_from_file(fname):
 
     source_table = source_detect(fname)
     filtered_source_table = filter_source_table(source_table)
-
-    return TransmissionCatalogueEntry(
-        image_id=image_id,
-        x=None,
-        y=None,
-        inc_prescan=None,
-        flux=None,)
+    inc_prescan = image_has_prescan(fname)
+    for row in filtered_source_table:
+        yield TransmissionCatalogueEntry(
+            image_id=int(image_id),
+            x_coordinate=float(row['X_coordinate']),
+            y_coordinate=float(row['Y_coordinate']),
+            inc_prescan=inc_prescan,
+            flux_adu=float(row['Aper_flux_3']))
 
 
 @contextmanager
@@ -67,7 +68,15 @@ def connect_to_database(args):
 
 
 def upload_info(extracted_data, cursor):
-    print(extracted_data)
+    
+    query = '''insert into transmission_sources ({fields})
+    values ({placeholders})'''
+
+    for row in extracted_data:
+        full_query = query.format(
+            fields=','.join(row._fields),
+            placeholders=','.join(['%s'] * len(row._fields)))
+        cursor.execute(full_query, args=row)
 
 
 def render_fits_catalogue(data, fname):
