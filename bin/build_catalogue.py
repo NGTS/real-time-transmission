@@ -5,16 +5,14 @@ from __future__ import division, print_function, absolute_import
 import argparse
 import logging
 from astropy.io import fits
-import pymysql
-from contextlib import contextmanager
 from collections import namedtuple
 import tempfile
 import subprocess as sp
 import numpy as np
 from scipy.spatial import KDTree
 
-logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
-logger = logging.getLogger(__name__)
+from ngts_transmission import (logger, connect_to_database,
+                               add_database_arguments)
 
 TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry', [
     'image_id',
@@ -146,16 +144,6 @@ def extract_from_file(fname, region_filename):
             flux_adu=float(row['Aper_flux_3']))
 
 
-@contextmanager
-def connect_to_database(args):
-    with pymysql.connect(user=args.db_user,
-                         unix_socket=args.db_socket,
-                         db=args.db_name) as cursor:
-        logger.debug('Connected to database')
-        yield cursor
-        logger.debug('Closing database connection')
-
-
 def upload_info(extracted_data, cursor):
 
     query = '''insert into transmission_sources ({fields})
@@ -233,17 +221,6 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('refimage')
-    parser.add_argument('--db-socket',
-                        required=False,
-                        default='/var/lib/mysql/mysql.sock',
-                        help='Socket to connect to')
-    parser.add_argument('--db-user',
-                        required=False,
-                        default='ops',
-                        help='Database user')
-    parser.add_argument('--db-name',
-                        required=False,
-                        default='ngts_ops',
-                        help='Database')
+    add_database_arguments(parser)
     parser.add_argument('--fits-out', required=False)
     main(parser.parse_args())
