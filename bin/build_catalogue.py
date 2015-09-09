@@ -27,12 +27,15 @@ def image_has_prescan(fname):
     return fits.getdata(fname).shape == (2048, 2088)
 
 
-def source_detect(fname, n_pixels=3, threshold=7):
+def source_detect(fname, n_pixels, threshold, fwhmfilt):
     logger.info('Running source detect')
     logger.debug('n_pixels: %s, threshold: %s', n_pixels, threshold)
     with tempfile.NamedTemporaryFile(suffix='.fits') as tfile:
-        cmd = ['imcore', fname, 'noconf', tfile.name, n_pixels, threshold,]
-        sp.check_call(list(map(str, cmd)))
+        cmd = ['imcore', fname, 'noconf', tfile.name, n_pixels, threshold,
+               '--noell', '--filtfwhm', fwhmfilt, '--rcore', 3]
+        str_cmd = list(map(str, cmd))
+        logger.debug('Running command [%s]', ' '.join(str_cmd))
+        sp.check_call(str_cmd)
         tfile.seek(0)
 
         with fits.open(tfile.name) as infile:
@@ -51,7 +54,7 @@ def isolated_index(x, y, radius=6.):
     return index
 
 
-def filter_source_table(source_table):
+def filter_source_table(source_table, radius):
     logger.info('Filtering source list')
     # Build up an index
     index = np.ones(len(source_table), dtype=bool)
@@ -75,7 +78,8 @@ def filter_source_table(source_table):
 
     # Only include isolated stars
     index &= isolated_index(source_table['X_coordinate'],
-                            source_table['Y_coordinate'])
+                            source_table['Y_coordinate'],
+                            radius=radius)
 
     # Return the final catalogue
     return source_table[index]
@@ -118,15 +122,18 @@ image'''
         self.fptr.write(header + '\n')
 
 
-def extract_from_file(fname, region_filename):
+def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
+                      isolation_radius):
     logger.info('Extracting catalogue from %s', fname)
     with fits.open(fname) as infile:
         header = infile[0].header
 
     image_id = header['image_id']
-    source_table = source_detect(fname)
+    source_table = source_detect(fname, n_pixels=n_pixels, threshold=threshold,
+                                 fwhmfilt=fwhmfilt)
     logger.info('Found %s sources', len(source_table))
-    filtered_source_table = filter_source_table(source_table)
+    filtered_source_table = filter_source_table(source_table,
+                                                radius=isolation_radius)
     logger.info('Keeping %s sources', len(filtered_source_table))
 
     with RegionFile(region_filename) as rfile:
@@ -201,7 +208,14 @@ def main(args):
         logger.setLevel('DEBUG')
     logger.debug(args)
 
-    file_info = list(extract_from_file(args.refimage, args.refimage + '.reg'))
+    file_info = list(extract_from_file(
+        args.refimage,
+        region_filename=args.refimage + '.reg',
+        n_pixels=args.npix,
+        threshold=args.threshold,
+        fwhmfilt=args.fwhmfilt,
+        isolation_radius=args.isolation_radius,
+    ))
 
     with connect_to_database(args) as cursor:
         upload_info(file_info, cursor)
@@ -222,5 +236,15 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('refimage')
     add_database_arguments(parser)
+    parser.add_argument('-n', '--npix', required=False, default=2, type=int,
+                        help='Number of neighbouring pixels to be defined '
+                        'as a source')
+    parser.add_argument('-t', '--threshold', required=False, default=3,
+                        type=float,
+                        help='Significance sigma for source detect')
+    parser.add_argument('-f', '--fwhmfilt', required=False, default=1.5,
+                        type=float, help='FWHM')
+    parser.add_argument('-i', '--isolation-radius', required=False, default=6,
+                        type=float, help='Isolation distance (pix)')
     parser.add_argument('--fits-out', required=False)
     main(parser.parse_args())
