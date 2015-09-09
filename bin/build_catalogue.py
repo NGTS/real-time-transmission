@@ -11,12 +11,17 @@ from collections import namedtuple
 import tempfile
 import subprocess as sp
 from joblib import Memory
+import numpy as np
 
 logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
 
 TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry', [
-    'image_id', 'x_coordinate', 'y_coordinate', 'inc_prescan', 'flux_adu',
+    'image_id',
+    'x_coordinate',
+    'y_coordinate',
+    'inc_prescan',
+    'flux_adu',
 ])
 
 memory = Memory(cachedir='.tmp')
@@ -68,7 +73,7 @@ def connect_to_database(args):
 
 
 def upload_info(extracted_data, cursor):
-    
+
     query = '''insert into transmission_sources ({fields})
     values ({placeholders})'''
 
@@ -79,8 +84,39 @@ def upload_info(extracted_data, cursor):
         cursor.execute(full_query, args=row)
 
 
+def column_type(data):
+    '''
+    Returns the fits name for a column type
+    '''
+    dtype = data.dtype
+    if dtype == np.float64:
+        return 'D'
+    elif dtype == np.int64:
+        return 'J'
+    elif dtype == bool:
+        return 'L'
+    else:
+        raise TypeError("No fits type for %s specified" % dtype)
+
+
 def render_fits_catalogue(data, fname):
-    pass
+    columns_data = {
+        field_name: np.array([getattr(row, field_name) for row in data])
+        for field_name in data[0]._fields
+    }
+    columns = {
+        field_name: fits.Column(name=field_name,
+                                format=column_type(columns_data[field_name]),
+                                array=columns_data[field_name])
+        for field_name in columns_data
+    }
+
+    header = {'image_id': data[0].image_id,}
+    phdu = fits.PrimaryHDU(header=fits.Header(header.items()))
+    tbl = fits.BinTableHDU.from_columns(columns.values())
+    tbl.name = 'transmission_catalogue'
+    hdulist = fits.HDUList([phdu, tbl])
+    hdulist.writeto(fname, clobber=True)
 
 
 def main(args):
@@ -93,7 +129,6 @@ def main(args):
         upload_info(file_info, cursor)
     if args.fits_out is not None:
         render_fits_catalogue(file_info, args.fits_out)
-
 
 
 if __name__ == '__main__':
