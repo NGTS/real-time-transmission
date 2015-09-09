@@ -11,6 +11,10 @@ logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
 
 
+def image_has_prescan(fname):
+    return fits.getdata(fname).shape == (2048, 2088)
+
+
 def main(args):
     if args.verbose:
         logger.setLevel('DEBUG')
@@ -22,6 +26,7 @@ if __name__ == '__main__':
     Given an autoguider reference frame, extract a source catalogue, filter the
     object list and store in a file
     '''
+
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('refimage')
