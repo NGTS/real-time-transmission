@@ -22,7 +22,10 @@ initialise_schema() {
 }
 
 extract_sources() {
-    python ./bin/build_catalogue.py data/refimage.fits
+    python ./bin/build_catalogue.py data/refimage.fits \
+        --db-socket /private/tmp/mysql.sock \
+        --db-user ops \
+        --db-name ngts_ops
 }
 
 main() {
