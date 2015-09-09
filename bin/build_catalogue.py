@@ -179,9 +179,13 @@ if __name__ == '__main__':
                         required=False,
                         default='/var/lib/mysql/mysql.sock',
                         help='Socket to connect to')
-    parser.add_argument('--db-user', required=False, default='ops',
+    parser.add_argument('--db-user',
+                        required=False,
+                        default='ops',
                         help='Database user')
-    parser.add_argument('--db-name', required=False, default='ngts_ops',
+    parser.add_argument('--db-name',
+                        required=False,
+                        default='ngts_ops',
                         help='Database')
     parser.add_argument('--fits-out', required=False)
     main(parser.parse_args())
