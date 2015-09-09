@@ -35,12 +35,14 @@ initialise_schema() {
     x_coordinate float not null,
     y_coordinate float not null,
     inc_prescan tinyint default 1,
-    flux_adu float not null,
-    foreign key (image_id)
-        references autoguider_refimage(ref_image_id)
-        on delete restrict
+    flux_adu float not null
     )
     '
+
+    # Remove foreign key constraint for now
+    # foreign key (image_id)
+    #     references autoguider_refimage(ref_image_id)
+    #     on delete restrict
 }
 
 extract_sources() {
