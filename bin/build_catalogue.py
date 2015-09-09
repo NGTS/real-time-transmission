@@ -170,13 +170,18 @@ if __name__ == '__main__':
     object list and store in a file
     '''
 
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('refimage')
     parser.add_argument('--db-socket',
                         required=False,
-                        default='/var/lib/mysql/mysql.sock')
-    parser.add_argument('--db-user', required=False, default='ops')
-    parser.add_argument('--db-name', required=False, default='ngts_ops')
+                        default='/var/lib/mysql/mysql.sock',
+                        help='Socket to connect to')
+    parser.add_argument('--db-user', required=False, default='ops',
+                        help='Database user')
+    parser.add_argument('--db-name', required=False, default='ngts_ops',
+                        help='Database')
     parser.add_argument('--fits-out', required=False)
     main(parser.parse_args())
