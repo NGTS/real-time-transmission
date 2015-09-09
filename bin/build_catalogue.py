@@ -66,17 +66,58 @@ def filter_source_table(source_table):
     return source_table[index]
 
 
-def extract_from_file(fname):
+class RegionFile(object):
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __enter__(self):
+        self.fptr = open(self.filename, 'w')
+        self.write_header()
+        return self
+
+    def __exit__(self, *args):
+        self.fptr.close()
+
+    @staticmethod
+    def circle(x, y, colour, radius=3.):
+        return 'circle({x},{y},{radius}) # color={colour}\n'.format(
+            x=x,
+            y=y,
+            colour=colour,
+            radius=radius)
+
+    def add_regions(self, catalogue, colour):
+        logger.debug('Adding %s regions', colour)
+        for row in catalogue:
+            self.fptr.write(
+                self.circle(
+                    row['X_coordinate'], row['Y_coordinate'],
+                    colour=colour))
+
+    def write_header(self):
+        header = '''# Region file format: DS9 version 4.1
+global color=green dashlist=8 3 width=1 font="helvetica 10 normal roman" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+image'''
+
+        self.fptr.write(header + '\n')
+
+
+def extract_from_file(fname, region_filename):
     logger.info('Extracting catalogue from %s', fname)
     with fits.open(fname) as infile:
         header = infile[0].header
 
     image_id = header['image_id']
-
     source_table = source_detect(fname)
     logger.info('Found %s sources', len(source_table))
     filtered_source_table = filter_source_table(source_table)
     logger.info('Keeping %s sources', len(filtered_source_table))
+
+    with RegionFile(region_filename) as rfile:
+        rfile.add_regions(filtered_source_table, colour='green')
+        rfile.add_regions(source_table, colour='red')
+
     inc_prescan = image_has_prescan(fname)
     logger.debug('Image has prescan: %s', inc_prescan)
     for row in filtered_source_table:
@@ -155,7 +196,7 @@ def main(args):
         logger.setLevel('DEBUG')
     logger.debug(args)
 
-    file_info = list(extract_from_file(args.refimage))
+    file_info = list(extract_from_file(args.refimage, args.refimage + '.reg'))
 
     with connect_to_database(args) as cursor:
         upload_info(file_info, cursor)
