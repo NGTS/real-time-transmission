@@ -32,6 +32,8 @@ def image_has_prescan(fname):
 
 
 def source_detect(fname, n_pixels=3, threshold=7):
+    logger.info('Running source detect')
+    logger.debug('n_pixels: %s, threshold: %s', n_pixels, threshold)
     with tempfile.NamedTemporaryFile(suffix='.fits') as tfile:
         cmd = ['imcore', fname, 'noconf', tfile.name, n_pixels, threshold,]
         sp.check_call(list(map(str, cmd)))
@@ -42,18 +44,23 @@ def source_detect(fname, n_pixels=3, threshold=7):
 
 
 def filter_source_table(source_table):
+    logger.info('Filtering source list')
     return source_table
 
 
 def extract_from_file(fname):
+    logger.info('Extracting catalogue from %s', fname)
     with fits.open(fname) as infile:
         header = infile[0].header
 
     image_id = header['image_id']
 
     source_table = source_detect(fname)
+    logger.info('Found %s sources', len(source_table))
     filtered_source_table = filter_source_table(source_table)
+    logger.info('Keeping %s sources', len(filtered_source_table))
     inc_prescan = image_has_prescan(fname)
+    logger.debug('Image has prescan: %s', inc_prescan)
     for row in filtered_source_table:
         yield TransmissionCatalogueEntry(
             image_id=int(image_id),
@@ -68,7 +75,9 @@ def connect_to_database(args):
     with pymysql.connect(user=args.db_user,
                          unix_socket=args.db_socket,
                          db=args.db_name) as cursor:
+        logger.debug('Connected to database')
         yield cursor
+        logger.debug('Closing database connection')
 
 
 def upload_info(extracted_data, cursor):
@@ -76,10 +85,14 @@ def upload_info(extracted_data, cursor):
     query = '''insert into transmission_sources ({fields})
     values ({placeholders})'''
 
+    def format_query(query_str):
+        return ' '.join([line.strip() for line in query_str.split('\n')])
+
     for row in extracted_data:
         full_query = query.format(
             fields=','.join(row._fields),
             placeholders=','.join(['%s'] * len(row._fields)))
+        logger.debug('Inserting %s: %s', format_query(full_query), list(row))
         cursor.execute(full_query, args=row)
 
 
@@ -99,6 +112,7 @@ def column_type(data):
 
 
 def render_fits_catalogue(data, fname):
+    logger.info('Rendering fits file to %s', fname)
     columns_data = {
         field_name: np.array([getattr(row, field_name) for row in data])
         for field_name in data[0]._fields
