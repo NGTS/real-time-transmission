@@ -54,8 +54,11 @@ def filter_source_table(source_table):
     index &= (source_table['Y_coordinate'] > edge_margin)
     index &= (source_table['Y_coordinate'] < (image_size - edge_margin))
 
-    # Now only a specific flux range
-    flux_lims = (flux_lim_low, flux_lim_high) = (1E3, 45E3)
+    # Now only a specific flux range. Assume the stellar flux goes into
+    # `psf_size` pixels so the value can be higher than 2**16-1
+    psf_size = 2.
+    flux_lims = (flux_lim_low, flux_lim_high) = (1E3 * psf_size,
+                                                 45E3 * psf_size)
     index &= (source_table['Aper_flux_3'] >= flux_lim_low)
     index &= (source_table['Aper_flux_3'] <= flux_lim_high)
 
