@@ -31,7 +31,6 @@ def image_has_prescan(fname):
     return fits.getdata(fname).shape == (2048, 2088)
 
 
-@memory.cache
 def source_detect(fname, n_pixels=3, threshold=7):
     with tempfile.NamedTemporaryFile(suffix='.fits') as tfile:
         cmd = ['imcore', fname, 'noconf', tfile.name, n_pixels, threshold,]
