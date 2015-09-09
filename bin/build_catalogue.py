@@ -4,6 +4,7 @@
 from __future__ import division, print_function, absolute_import
 import argparse
 import logging
+from astropy.io import fits
 
 logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
