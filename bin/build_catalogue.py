@@ -45,7 +45,25 @@ def source_detect(fname, n_pixels=3, threshold=7):
 
 def filter_source_table(source_table):
     logger.info('Filtering source list')
-    return source_table
+    # Build up an index
+    index = np.ones(len(source_table), dtype=bool)
+
+    # Include only stars in the centre
+    edge_margin = 512
+    overscan_width = 20
+    image_size = 2048
+    index &= (source_table['X_coordinate'] > (overscan_width + edge_margin))
+    index &= (source_table['X_coordinate'] < (image_size - edge_margin))
+    index &= (source_table['Y_coordinate'] > edge_margin)
+    index &= (source_table['Y_coordinate'] < (image_size - edge_margin))
+
+    # Now only a specific flux range
+    flux_lims = (flux_lim_low, flux_lim_high) = (1E3, 45E3)
+    index &= (source_table['Aper_flux_3'] >= flux_lim_low)
+    index &= (source_table['Aper_flux_3'] <= flux_lim_high)
+
+    # Return the final catalogue
+    return source_table[index]
 
 
 def extract_from_file(fname):
