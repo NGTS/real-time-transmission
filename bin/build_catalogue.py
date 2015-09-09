@@ -33,8 +33,25 @@ def source_detect(fname, n_pixels=3, threshold=7):
             return infile[1].data
 
 
+def filter_source_table(source_table):
+    return source_table
+
+
 def extract_from_file(fname):
-    pass
+    with fits.open(fname) as infile:
+        header = infile[0].header
+
+    image_id = header['image_id']
+
+    source_table = source_detect(fname)
+    filtered_source_table = filter_source_table(source_table)
+
+    return TransmissionCatalogueEntry(
+        image_id=image_id,
+        x=None,
+        y=None,
+        inc_prescan=None,
+        flux=None,)
 
 
 @contextmanager
@@ -46,6 +63,10 @@ def connect_to_database(args):
 
 
 def upload_info(extracted_data, cursor):
+    print(extracted_data)
+
+
+def render_fits_catalogue(data, fname):
     pass
 
 
@@ -57,6 +78,9 @@ def main(args):
     file_info = extract_from_file(args.refimage)
     with connect_to_database(args) as cursor:
         upload_info(file_info, cursor)
+    if args.fits_out is not None:
+        render_fits_catalogue(file_info, args.fits_out)
+
 
 
 if __name__ == '__main__':
@@ -73,4 +97,5 @@ if __name__ == '__main__':
                         default='/var/lib/mysql/mysql.sock')
     parser.add_argument('--db-user', required=False, default='ops')
     parser.add_argument('--db-name', required=False, default='ngts_ops')
+    parser.add_argument('--fits-out', required=False)
     main(parser.parse_args())
