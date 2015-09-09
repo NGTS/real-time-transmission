@@ -10,7 +10,6 @@ from contextlib import contextmanager
 from collections import namedtuple
 import tempfile
 import subprocess as sp
-from joblib import Memory
 import numpy as np
 
 logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
@@ -23,8 +22,6 @@ TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry', [
     'inc_prescan',
     'flux_adu',
 ])
-
-memory = Memory(cachedir='.tmp')
 
 
 def image_has_prescan(fname):
