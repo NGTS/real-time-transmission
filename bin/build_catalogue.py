@@ -7,13 +7,30 @@ import logging
 from astropy.io import fits
 import pymysql
 from contextlib import contextmanager
+from collections import namedtuple
+import tempfile
+import subprocess as sp
 
 logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
 
+TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry', [
+    'image_id', 'x', 'y', 'inc_prescan', 'flux'
+])
+
 
 def image_has_prescan(fname):
     return fits.getdata(fname).shape == (2048, 2088)
+
+
+def source_detect(fname, n_pixels=3, threshold=7):
+    with tempfile.NamedTemporaryFile(suffix='.fits') as tfile:
+        cmd = ['imcore', fname, 'noconf', tfile.name, n_pixels, threshold,]
+        sp.check_call(list(map(str, cmd)))
+        tfile.seek(0)
+
+        with fits.open(tfile.name) as infile:
+            return infile[1].data
 
 
 def extract_from_file(fname):
