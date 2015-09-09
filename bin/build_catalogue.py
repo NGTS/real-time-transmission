@@ -23,4 +23,6 @@ if __name__ == '__main__':
     '''
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('refimage')
+    parser.add_argument('-o', '--output', required=True)
     main(parser.parse_args())
