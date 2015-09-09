@@ -27,7 +27,8 @@ extract_sources() {
         --db-socket /private/tmp/mysql.sock \
         --db-user ops \
         --db-name ngts_ops \
-        --fits-out /tmp/catalogue.fits
+        --fits-out /tmp/catalogue.fits \
+        --verbose
 }
 
 main() {
