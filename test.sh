@@ -29,15 +29,19 @@ clear_database() {
 
 initialise_schema() {
     echo Initialising schema
-    run_mysql_command 'create table transmission_sources (
-    id integer primary key auto_increment,
-    image_id bigint not null,
-    x_coordinate float not null,
-    y_coordinate float not null,
-    inc_prescan tinyint default 1,
-    flux_adu float not null
-    )
-    '
+    if [[ -z ${DB_SOCKET} ]]; then
+        python bin/initialise_database.py \
+                --db-host ${DB_HOST} \
+                --db-user ${DB_USER} \
+                --db-name ${DB_NAME} \
+                -v
+    else
+        python bin/initialise_database.py \
+                --db-socket ${DB_SOCKET} \
+                --db-user ${DB_USER} \
+                --db-name ${DB_NAME} \
+                -v
+    fi
 
     # Remove foreign key constraint for now
     # foreign key (image_id)
