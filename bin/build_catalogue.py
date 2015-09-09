@@ -92,7 +92,7 @@ def column_type(data):
     if dtype == np.float64:
         return 'D'
     elif dtype == np.int64:
-        return 'J'
+        return 'K'
     elif dtype == bool:
         return 'L'
     else:
