@@ -82,6 +82,7 @@ upload_data() {
 main() {
     initialise_schema
     extract_sources
+    upload_data
 }
 
 main
