@@ -24,12 +24,12 @@ def image_has_prescan(fname):
     return fits.getdata(fname).shape == (2048, 2088)
 
 
-def source_detect(fname, n_pixels, threshold, fwhmfilt):
+def source_detect(fname, n_pixels, threshold, fwhmfilt, aperture_radius):
     logger.info('Running source detect')
     logger.debug('n_pixels: %s, threshold: %s', n_pixels, threshold)
     with tempfile.NamedTemporaryFile(suffix='.fits') as tfile:
         cmd = ['imcore', fname, 'noconf', tfile.name, n_pixels, threshold,
-               '--noell', '--filtfwhm', fwhmfilt, '--rcore', 3]
+               '--noell', '--filtfwhm', fwhmfilt, '--rcore', aperture_radius]
         str_cmd = list(map(str, cmd))
         logger.debug('Running command [%s]', ' '.join(str_cmd))
         sp.check_call(str_cmd)
@@ -85,8 +85,9 @@ def filter_source_table(source_table, radius):
 
 class RegionFile(object):
 
-    def __init__(self, filename):
+    def __init__(self, filename, aperture_radius):
         self.filename = filename
+        self.aperture_radius = aperture_radius
 
     def __enter__(self):
         self.fptr = open(self.filename, 'w')
@@ -96,13 +97,12 @@ class RegionFile(object):
     def __exit__(self, *args):
         self.fptr.close()
 
-    @staticmethod
-    def circle(x, y, colour, radius=3.):
+    def circle(self, x, y, colour):
         return 'circle({x},{y},{radius}) # color={colour}\n'.format(
             x=x,
             y=y,
             colour=colour,
-            radius=radius)
+            radius=self.aperture_radius)
 
     def add_regions(self, catalogue, colour):
         logger.debug('Adding %s regions', colour)
@@ -121,20 +121,21 @@ image'''
 
 
 def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
-                      isolation_radius):
+                      isolation_radius, aperture_radius):
     logger.info('Extracting catalogue from %s', fname)
     with fits.open(fname) as infile:
         header = infile[0].header
 
     ref_image_id = header['image_id']
     source_table = source_detect(fname, n_pixels=n_pixels, threshold=threshold,
-                                 fwhmfilt=fwhmfilt)
+                                 fwhmfilt=fwhmfilt,
+                                 aperture_radius=aperture_radius)
     logger.info('Found %s sources', len(source_table))
     filtered_source_table = filter_source_table(source_table,
                                                 radius=isolation_radius)
     logger.info('Keeping %s sources', len(filtered_source_table))
 
-    with RegionFile(region_filename) as rfile:
+    with RegionFile(region_filename, aperture_radius=aperture_radius) as rfile:
         rfile.add_regions(filtered_source_table, colour='green')
         rfile.add_regions(source_table, colour='red')
 
@@ -142,6 +143,7 @@ def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
     logger.debug('Image has prescan: %s', inc_prescan)
     for row in filtered_source_table:
         yield TransmissionCatalogueEntry(
+            aperture_radius=aperture_radius,
             ref_image_id=int(ref_image_id),
             x_coordinate=float(row['X_coordinate']),
             y_coordinate=float(row['Y_coordinate']),
@@ -213,6 +215,7 @@ def main(args):
         threshold=args.threshold,
         fwhmfilt=args.fwhmfilt,
         isolation_radius=args.isolation_radius,
+        aperture_radius=args.aperture_radius,
     ))
 
     with connect_to_database(args) as cursor:
@@ -244,5 +247,7 @@ if __name__ == '__main__':
                         type=float, help='FWHM')
     parser.add_argument('-i', '--isolation-radius', required=False, default=6,
                         type=float, help='Isolation distance (pix)')
+    parser.add_argument('-r', '--aperture-radius', required=False, default=3.,
+                        type=float, help='Aperture radius (pix)')
     parser.add_argument('--fits-out', required=False)
     main(parser.parse_args())

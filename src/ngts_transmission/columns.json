@@ -5,7 +5,8 @@
         "x_coordinate": "float not null",
         "y_coordinate": "float not null",
         "inc_prescan": "tinyint default 1",
-        "flux_adu": "float not null"
+        "flux_adu": "float not null",
+        "aperture_radius": "float not null"
     },
     "transmission_log": {
         "image_id": "bigint primary key",
