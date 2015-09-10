@@ -63,6 +63,22 @@ extract_sources() {
     fi
 }
 
+upload_data() {
+    if [[ -z ${DB_SOCKET} ]]; then
+        python ./bin/upload_transmission.py data/science_image.fits \
+            --db-host ${DB_HOST} \
+            --db-user ${DB_USER} \
+            --db-name ${DB_NAME} \
+            --verbose
+    else
+        python ./bin/upload_transmission.py data/science_image.fits \
+            --db-socket ${DB_SOCKET} \
+            --db-user ${DB_USER} \
+            --db-name ${DB_NAME} \
+            --verbose
+    fi
+}
+
 main() {
     initialise_schema
     extract_sources
