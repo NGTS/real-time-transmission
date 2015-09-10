@@ -126,7 +126,7 @@ def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
     with fits.open(fname) as infile:
         header = infile[0].header
 
-    image_id = header['image_id']
+    ref_image_id = header['image_id']
     source_table = source_detect(fname, n_pixels=n_pixels, threshold=threshold,
                                  fwhmfilt=fwhmfilt)
     logger.info('Found %s sources', len(source_table))
@@ -142,7 +142,7 @@ def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
     logger.debug('Image has prescan: %s', inc_prescan)
     for row in filtered_source_table:
         yield TransmissionCatalogueEntry(
-            image_id=int(image_id),
+            ref_image_id=int(ref_image_id),
             x_coordinate=float(row['X_coordinate']),
             y_coordinate=float(row['Y_coordinate']),
             inc_prescan=inc_prescan,
@@ -193,7 +193,7 @@ def render_fits_catalogue(data, fname):
         for field_name in columns_data
     }
 
-    header = {'image_id': data[0].image_id,}
+    header = {'image_id': data[0].ref_image_id,}
     phdu = fits.PrimaryHDU(header=fits.Header(header.items()))
     tbl = fits.BinTableHDU.from_columns(columns.values())
     tbl.name = 'transmission_catalogue'
