@@ -23,10 +23,6 @@ run_mysql_command() {
     fi
 }
 
-clear_database() {
-    run_mysql_command 'drop table if exists transmission_sources'
-}
-
 initialise_schema() {
     echo Initialising schema
     if [[ -z ${DB_SOCKET} ]]; then
@@ -68,7 +64,6 @@ extract_sources() {
 }
 
 main() {
-    clear_database
     initialise_schema
     extract_sources
 }
