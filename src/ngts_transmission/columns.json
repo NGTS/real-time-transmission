@@ -1,0 +1,22 @@
+{
+    "transmission_sources": {
+        "id": "integer primary key auto_increment",
+        "image_id": "bigint not null",
+        "x_coordinate": "float not null",
+        "y_coordinate": "float not null",
+        "inc_prescan": "tinyint default 1",
+        "flux_adu": "float not null"
+    },
+    "transmission_log": {
+        "image_id": "bigint primary key",
+        "image_mean_flux": "double not null",
+        "mean_flux_offset": "double not null",
+        "median_flux_offset": "double not null",
+        "flux_offset_err": "double not null",
+        "flux_offset_lq": "double not null",
+        "flux_offset_uq": "double not null",
+        "flux_offset_stdev": "double not null",
+        "flag": "integer default 0"
+    }
+}
+

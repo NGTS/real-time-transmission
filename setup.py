@@ -12,5 +12,8 @@ setup(
         'numpy',
         'scipy',
     ],
+    package_data={
+        '': ['*.json'],
+    },
 )
 

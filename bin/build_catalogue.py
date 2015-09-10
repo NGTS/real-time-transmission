@@ -12,15 +12,12 @@ import numpy as np
 from scipy.spatial import KDTree
 
 from ngts_transmission import (logger, connect_to_database,
-                               add_database_arguments)
+                               add_database_arguments, database_schema)
 
-TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry', [
-    'image_id',
-    'x_coordinate',
-    'y_coordinate',
-    'inc_prescan',
-    'flux_adu',
-])
+schema = database_schema()['transmission_sources']
+
+TransmissionCatalogueEntry = namedtuple('TransmissionCatalogueEntry',
+    [key for key in schema if key != 'id'])
 
 
 def image_has_prescan(fname):

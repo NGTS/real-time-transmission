@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 import logging
 import pymysql
+import json
+import os
 
 logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
@@ -29,9 +31,7 @@ def add_database_arguments(parser):
     parser.add_argument('--db-socket',
                         required=False,
                         help='Socket to connect to')
-    parser.add_argument('--db-host',
-                        required=False,
-                        help='Host to connect to')
+    parser.add_argument('--db-host', required=False, help='Host to connect to')
     parser.add_argument('--db-user',
                         required=False,
                         default='ops',
@@ -41,3 +41,9 @@ def add_database_arguments(parser):
                         default='ngts_ops',
                         help='Database')
     return parser
+
+
+def database_schema():
+    path = os.path.join(os.path.dirname(__file__), 'columns.json')
+    with open(path) as infile:
+        return json.load(infile)
