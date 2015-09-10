@@ -43,6 +43,7 @@ def source_detect(fname, n_pixels, threshold, fwhmfilt):
 
 
 def isolated_index(x, y, radius=6.):
+    logger.info('Filtering with an isolation radius: %s', radius)
     tree = KDTree(np.vstack([x, y]).T)
     index = np.zeros_like(x, dtype=bool)
     for i in np.arange(x.size):
