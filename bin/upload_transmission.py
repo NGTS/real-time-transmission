@@ -97,6 +97,26 @@ class Photometry(object):
             self.x, self.y, self.radius, self.flux / other.flux)
 
 
+def extract_photometry_results(filename, cursor, image_id):
+    '''placeholder for Max's code'''
+    ref_image_id = query_for_ref_image_id(image_id, cursor)
+    ref_catalogue = Photometry.from_database(cursor, ref_image_id)
+    source_flux = Photometry.extract_from_file(filename, ref_catalogue)
+    flux_ratio = source_flux / ref_catalogue
+
+    return {
+        'image_mean_flux': float(ref_catalogue.flux.mean()),
+        'mean_flux_ratio': float(flux_ratio.flux.mean()),
+        'median_flux_ratio': float(np.median(flux_ratio.flux)),
+        # Standard error, using the MAD converted to std
+        'flux_ratio_err': float(standard_error(flux_ratio.flux)),
+        'flux_ratio_lq': float(np.percentile(flux_ratio.flux, 25)),
+        'flux_ratio_uq': float(np.percentile(flux_ratio.flux, 75)),
+        'flux_ratio_stdev': float(flux_ratio.flux.std()),
+        'flag': flux_ratio.flag(),
+    }
+
+
 class TransmissionEntry(TransmissionEntryBase):
 
     @classmethod
