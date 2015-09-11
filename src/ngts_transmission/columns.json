@@ -11,12 +11,12 @@
     "transmission_log": {
         "image_id": "bigint primary key",
         "image_mean_flux": "double not null",
-        "mean_flux_offset": "double not null",
-        "median_flux_offset": "double not null",
-        "flux_offset_err": "double not null",
-        "flux_offset_lq": "double not null",
-        "flux_offset_uq": "double not null",
-        "flux_offset_stdev": "double not null",
+        "mean_flux_ratio": "double not null",
+        "median_flux_ratio": "double not null",
+        "flux_ratio_err": "double not null",
+        "flux_ratio_lq": "double not null",
+        "flux_ratio_uq": "double not null",
+        "flux_ratio_stdev": "double not null",
         "flag": "integer default 0"
     }
 }
