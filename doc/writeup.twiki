@@ -1,0 +1,96 @@
+---+ Real time transmission
+
+_Persons responsible: Max G._
+
+---++ Requirements
+
+For operations purposes we require a real-time measure of the transmission of the atmosphere. This will tell us when the night is not photometric and we should close.
+
+It is likely the quality of the night will be determinable by other means along with the transmission, but this is a direct measure of the photometric quality.
+
+The analysis should be performed as real-time as is possible (and allowable given other computing constraints), and the results should populate a database table.
+
+---+++ Scientific
+
+We want to track changes to opacity in the atmosphere. This is typically caused by water such as clouds, or changing humidity. This will affect our photometry in a way that is not particularly apparent through other measurements. The closest proxy is number of point sources but there may be many factors that affect this.
+
+The easiest way to measure this is to compare our measurement of the flux to the flux as measured in the autoguider reference image. We compute observed flux against expected flux, and can calibrate our photometric system.
+
+We are more concerned with tracking relative changes through the night, and for multiple nights for each camera and are not interested at this stage in the absolute measurement. This can come from the photometry output.
+
+---+++ Computational
+
+We have 8 aux nodes available for use. Depending on the computational strain the das nodes may be usable. In this case we *must not* interrupt Paladin on these nodes.
+
+---++ Ideas for the method
+
+   * [[#Watcher_process][Have a watcher process]]: 
+      * polls the database for a new observation
+      * computes statistics
+      * uploads to database
+   * Take a previous source detect from the autoguider reference frame 
+      * use autoguider offsets to position apertures in x/y positions for each target in the list (possibly not needed)
+   * Use central pixels only to avoid vignetting and remove the need for flat fielding
+   * Select the bright stars
+   * Select isolated stars
+   * Probably do not bother with dark and fixed pattern bias removal 
+      * they only add a constant
+   * Compute mean flux ratio
+
+---++ Database schema
+
+Table name: =transmission_sources=
+
+| *Column name* | *Column data type* | *Required* | *Default* | *Extra* | *Description* |
+| id | integer | yes | n/a | primary key | |
+| ref_image_id | bigint | yes | n/a | foreign key to =autoguider_refimage=? | Link from this table to a reference image |
+| x_coordinate | double | yes | n/a | | |
+| y_coordinate | double | yes | n/a | | |
+| inc_prescan | boolean | yes | n/a | Did the source image have a prescan? | |
+| flux_adu | double | yes | n/a | | |
+| aperture_radius | double | yes | n/a | | |
+
+This table stores all of the sources and their positions and fluxes from a source detect of the reference image.
+
+Table name: =transmission_log=
+
+| *Column name* | *Column data type* | *Required* | *Default* | *Extra* | *Description* |
+| image_id | bigint | yes | n/a | primary key, foreign key to =raw_image_list=? | Link from this table to an image |
+| image_mean_flux | double | yes | n/a | | Mean photometric flux in ADU from our image |
+| mean_flux_ratio | double | yes | n/a | | Mean shift for each star to its catalogue entry |
+| median_flux_ratio | double | yes | n/a | | Median shift for each star to its catalogue entry |
+| flux_ratio_err | double | yes | n/a | | Computed error on the flux ratios |
+| flux_ratio_lq | double | yes | n/a | | Lower quartile on the flux ratios |
+| flux_ratio_uq | double | yes | n/a | | Upper quartile on the flux ratios |
+| flux_ratio_stdev | double | yes | n/a | | Standard deviation of the flux ratios |
+| flag | integer | no | 0 | | Any reasons not to trust these measurements |
+
+This table stores the time series data for each science image of the transmission.
+
+---++ Watcher process
+
+After discussion with Richard about file polling the following method was chosen for initial development:
+
+   * Poll the database every N seconds (e.g. 10)
+   * Pick out the second to last entry 
+      * ensures that the file is very likely to exist completely on disk
+   * Sleep N seconds (e.g. 2) to be doubly sure that the file exists
+   * Continue the analysis
+
+---+++ Split approach
+
+We could use two types of process:
+
+   * the file watcher process which decides which file to analyse, and
+   * a worker process on each aux node
+These processes use a queue (in mysql) to be sure that no file is analysed multiple times. Example workflow:
+
+   * Watcher process sees new file and uploads to database: {image_id, action_id, camera_id}
+   * Worker process 
+      * sees new database row,
+      * analyses the file,
+      * writes the result back to the database and
+      * deletes the row
+Alternatively the watcher process could add a job to the SGE queue which would handle most of the above plan.
+
+%RED%RGW: I suggest we wait until we know what the computational load the real-time transmission puts on the system before planning how to manage and schedule the processing across the 8 aux nodes. I'm happy to add functionality to paladin, eg. to putting work items in queues in the d/b, if this will help simplify the "watcher" aspect.%ENDCOLOR%
