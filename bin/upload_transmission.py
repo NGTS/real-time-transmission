@@ -32,9 +32,10 @@ def standard_error(flux):
     return std_from_mad(mad(flux)) / np.sqrt(flux.size)
 
 
-def photometry_local(data, x, y, aperture_radius,
-                     sky_radius_inner=6,
-                     sky_radius_outer=8):
+def photometry_local(data, x, y, aperture_radius, sky_radius_inner,
+                     sky_radius_outer):
+    logger.debug('Sky annulus radii: %s -> %s', sky_radius_inner,
+                 sky_radius_outer)
     apertures = ph.CircularAperture((x, y), r=aperture_radius)
     annulus_apertures = ph.CircularAnnulus((x, y),
                                            r_in=sky_radius_inner,
@@ -76,13 +77,14 @@ class Photometry(object):
         return cls(*arrays)
 
     @classmethod
-    def extract_from_file(cls, filename, ref_catalogue):
+    def extract_from_file(cls, filename, ref_catalogue, sky_radius_inner,
+                          sky_radius_outer):
         with fits.open(filename) as infile:
             image_data = infile[0].data
 
-        source_flux = photometry_local(image_data, ref_catalogue.x,
-                                       ref_catalogue.y,
-                                       ref_catalogue.radius[0])
+        source_flux = photometry_local(
+            image_data, ref_catalogue.x, ref_catalogue.y,
+            ref_catalogue.radius[0], sky_radius_inner, sky_radius_outer)
         return cls(ref_catalogue.x, ref_catalogue.y, ref_catalogue.radius,
                    source_flux)
 
@@ -97,11 +99,13 @@ class Photometry(object):
             self.x, self.y, self.radius, self.flux / other.flux)
 
 
-def extract_photometry_results(filename, cursor, image_id):
+def extract_photometry_results(filename, cursor, image_id, sky_radius_inner,
+                               sky_radius_outer):
     '''placeholder for Max's code'''
     ref_image_id = query_for_ref_image_id(image_id, cursor)
     ref_catalogue = Photometry.from_database(cursor, ref_image_id)
-    source_flux = Photometry.extract_from_file(filename, ref_catalogue)
+    source_flux = Photometry.extract_from_file(
+        filename, ref_catalogue, sky_radius_inner, sky_radius_outer)
     flux_ratio = source_flux / ref_catalogue
 
     return {
@@ -120,14 +124,14 @@ def extract_photometry_results(filename, cursor, image_id):
 class TransmissionEntry(TransmissionEntryBase):
 
     @classmethod
-    def from_file(cls, filename, cursor):
+    def from_file(cls, filename, cursor, sky_radius_inner, sky_radius_outer):
         logger.info('Extracting transmission from %s', filename)
         with fits.open(filename) as infile:
             header = infile[0].header
             image_id = header['image_id']
 
-        photometry_results = extract_photometry_results(filename, cursor,
-                                                        image_id)
+        photometry_results = extract_photometry_results(
+            filename, cursor, image_id, sky_radius_inner, sky_radius_outer)
         photometry_results['image_id'] = image_id
 
         return cls(**photometry_results)
@@ -150,13 +154,25 @@ def main(args):
     logger.debug(args)
 
     with connect_to_database(args) as cursor:
-        entry = TransmissionEntry.from_file(args.filename, cursor)
+        entry = TransmissionEntry.from_file(args.filename, cursor,
+                                            sky_radius_inner=args.radius_inner,
+                                            sky_radius_outer=args.radius_outer)
         entry.upload_to_database(cursor)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('filename')
+    parser.add_argument('--radius-inner',
+                        required=False,
+                        default=4.,
+                        type=float,
+                        help='Inner sky annulus radius')
+    parser.add_argument('--radius-outer',
+                        required=False,
+                        default=8.,
+                        type=float,
+                        help='Outer sky annulus radius')
     add_database_arguments(parser)
     parser.add_argument('-v', '--verbose', action='store_true')
     main(parser.parse_args())
