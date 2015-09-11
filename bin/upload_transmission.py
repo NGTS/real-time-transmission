@@ -120,13 +120,14 @@ def extract_photometry_results(filename, cursor, image_id):
 class TransmissionEntry(TransmissionEntryBase):
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, cursor):
         logger.info('Extracting transmission from %s', filename)
         with fits.open(filename) as infile:
             header = infile[0].header
             image_id = header['image_id']
 
-        photometry_results = extract_photometry_results(filename)
+        photometry_results = extract_photometry_results(filename, cursor,
+                                                        image_id)
         photometry_results['image_id'] = image_id
 
         return cls(**photometry_results)
@@ -148,8 +149,8 @@ def main(args):
         logger.setLevel('DEBUG')
     logger.debug(args)
 
-    entry = TransmissionEntry.from_file(args.filename)
     with connect_to_database(args) as cursor:
+        entry = TransmissionEntry.from_file(args.filename, cursor)
         entry.upload_to_database(cursor)
 
 
