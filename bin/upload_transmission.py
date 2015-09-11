@@ -47,6 +47,56 @@ def photometry_local(data, x, y, aperture_radius,
     return np.array(final_sum)
 
 
+def query_for_ref_image_id(image_id, cursor):
+    query = '''select ref_image_id from autoguider_refimage
+    join raw_image_list using (field, camera_id)
+    where image_id = %s'''
+
+    cursor.execute(query, (image_id,))
+    return cursor.fetchone()[0]
+
+
+class Photometry(object):
+
+    def __init__(self, x, y, radius, flux):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.flux = flux
+
+    @classmethod
+    def from_database(cls, cursor, ref_image_id):
+        query = '''select x_coordinate, y_coordinate, aperture_radius, flux_adu
+            from transmission_sources
+            where ref_image_id = %s'''
+
+        cursor.execute(query, (ref_image_id,))
+        rows = cursor.fetchall()
+        arrays = list(map(np.array, zip(*rows)))
+        return cls(*arrays)
+
+    @classmethod
+    def extract_from_file(cls, filename, ref_catalogue):
+        with fits.open(filename) as infile:
+            image_data = infile[0].data
+
+        source_flux = photometry_local(image_data, ref_catalogue.x,
+                                       ref_catalogue.y,
+                                       ref_catalogue.radius[0])
+        return cls(ref_catalogue.x, ref_catalogue.y, ref_catalogue.radius,
+                   source_flux)
+
+    def flag(self):
+        return 0.
+
+    def __truediv__(self, other):
+        assert np.all(
+            np.isclose(self.x, other.x) & np.isclose(self.y, other.y))
+
+        return self.__class__(
+            self.x, self.y, self.radius, self.flux / other.flux)
+
+
 class TransmissionEntry(TransmissionEntryBase):
 
     @classmethod
