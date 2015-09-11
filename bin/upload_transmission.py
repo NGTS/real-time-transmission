@@ -32,6 +32,8 @@ def standard_error(flux):
     return std_from_mad(mad(flux)) / np.sqrt(flux.size)
 
 
+def photometry_local(data, x, y, aperture_radius,
+                     sky_radius_inner=6,
                      sky_radius_outer=8):
     apertures = ph.CircularAperture((x, y), r=aperture_radius)
     annulus_apertures = ph.CircularAnnulus((x, y),
