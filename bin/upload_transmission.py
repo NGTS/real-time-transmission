@@ -7,12 +7,16 @@ from collections import namedtuple
 from ngts_transmission import (logger, connect_to_database,
                                add_database_arguments, database_schema)
 from astropy.io import fits
+import numpy as np
 
 schema = database_schema()['transmission_log']
 TransmissionEntryBase = namedtuple('TransmissionEntryBase', schema.keys())
 
 
-def extract_photometry_results(filename):
+def mad(data, median=None):
+    median = median if median is not None else np.median(data)
+    return np.median(np.abs(data - median))
+
     '''placeholder for Max's code'''
     return {key: 0. for key in schema}
 
