@@ -6,6 +6,7 @@ import argparse
 from collections import namedtuple
 from ngts_transmission import (logger, connect_to_database,
                                add_database_arguments, database_schema)
+import photutils as ph
 from astropy.io import fits
 import numpy as np
 
@@ -17,8 +18,19 @@ def mad(data, median=None):
     median = median if median is not None else np.median(data)
     return np.median(np.abs(data - median))
 
-    '''placeholder for Max's code'''
-    return {key: 0. for key in schema}
+
+def photometry_local(data, x, y, aperture_radius, sky_radius_inner=6,
+                     sky_radius_outer=8):
+    apertures = ph.CircularAperture((x, y), r=aperture_radius)
+    annulus_apertures = ph.CircularAnnulus((x, y),
+                                           r_in=sky_radius_inner,
+                                           r_out=sky_radius_outer)
+    rawflux_table = ph.aperture_photometry(data, apertures)
+    bkgflux_table = ph.aperture_photometry(data, annulus_apertures)
+    bkg_mean = bkgflux_table['aperture_sum'] / annulus_apertures.area()
+    bkg_sum = bkg_mean * apertures.area()
+    final_sum = rawflux_table['aperture_sum'] - bkg_sum
+    return np.array(final_sum)
 
 
 class TransmissionEntry(TransmissionEntryBase):
