@@ -49,8 +49,8 @@ def photometry_local(data, x, y, aperture_radius, sky_radius_inner,
 
 
 def query_for_ref_image_id(image_id, cursor):
-    query = '''select ref_image_id from autoguider_refimage
-    join raw_image_list using (field, camera_id)
+    query = '''select ref_image_id from ngts_ops.autoguider_refimage
+    join ngts_ops.raw_image_list using (field, camera_id)
     where image_id = %s'''
 
     cursor.execute(query, (image_id,))
