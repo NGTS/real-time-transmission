@@ -19,7 +19,19 @@ def mad(data, median=None):
     return np.median(np.abs(data - median))
 
 
-def photometry_local(data, x, y, aperture_radius, sky_radius_inner=6,
+def std_from_mad(mad):
+    '''
+    Source: https://en.wikipedia.org/wiki/Median_absolute_deviation#Relation_to_standard_deviation
+    '''
+    return 1.4826 * mad
+
+
+def standard_error(flux):
+    # Only 1d arrays allowed
+    assert len(flux.shape) == 1
+    return std_from_mad(mad(flux)) / np.sqrt(flux.size)
+
+
                      sky_radius_outer=8):
     apertures = ph.CircularAperture((x, y), r=aperture_radius)
     annulus_apertures = ph.CircularAnnulus((x, y),
