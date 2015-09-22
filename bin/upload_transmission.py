@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 import argparse
 from collections import namedtuple
-from ngts_transmission import (logger, connect_to_database,
+from ngts_transmission import (logger, connect_to_database, open_fits,
                                add_database_arguments, database_schema)
 import photutils as ph
 from astropy.io import fits
@@ -79,7 +79,7 @@ class Photometry(object):
     @classmethod
     def extract_from_file(cls, filename, ref_catalogue, sky_radius_inner,
                           sky_radius_outer):
-        with fits.open(filename) as infile:
+        with open_fits(filename) as infile:
             image_data = infile[0].data
 
         source_flux = photometry_local(
@@ -126,7 +126,7 @@ class TransmissionEntry(TransmissionEntryBase):
     @classmethod
     def from_file(cls, filename, cursor, sky_radius_inner, sky_radius_outer):
         logger.info('Extracting transmission from %s', filename)
-        with fits.open(filename) as infile:
+        with open_fits(filename) as infile:
             header = infile[0].header
             image_id = header['image_id']
 

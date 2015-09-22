@@ -11,7 +11,7 @@ import subprocess as sp
 import numpy as np
 from scipy.spatial import KDTree
 
-from ngts_transmission import (logger, connect_to_database,
+from ngts_transmission import (logger, connect_to_database, open_fits,
                                add_database_arguments, database_schema)
 
 schema = database_schema()['transmission_sources']
@@ -35,7 +35,7 @@ def source_detect(fname, n_pixels, threshold, fwhmfilt, aperture_radius):
         sp.check_call(str_cmd)
         tfile.seek(0)
 
-        with fits.open(tfile.name) as infile:
+        with open_fits(tfile.name) as infile:
             return infile[1].data
 
 
@@ -123,7 +123,7 @@ image'''
 def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
                       isolation_radius, aperture_radius):
     logger.info('Extracting catalogue from %s', fname)
-    with fits.open(fname) as infile:
+    with open_fits(fname) as infile:
         header = infile[0].header
 
     ref_image_id = header['image_id']
