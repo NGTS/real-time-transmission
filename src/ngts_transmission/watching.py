@@ -8,3 +8,8 @@
     * find the files on disk
     * extract the sources
 '''
+
+
+class Job(object):
+    def __init__(self, filename):
+        self.filename = filename
