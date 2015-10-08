@@ -4,11 +4,13 @@
 from __future__ import division, print_function, absolute_import
 import argparse
 from collections import namedtuple
-from ngts_transmission import (logger, connect_to_database, open_fits,
-                               add_database_arguments, database_schema)
 import photutils as ph
 from astropy.io import fits
 import numpy as np
+
+from ngts_transmission.utils import logger, open_fits
+from ngts_transmission.db import (connect_to_database, add_database_arguments,
+                                  database_schema)
 
 schema = database_schema()['transmission_log']
 TransmissionEntryBase = namedtuple('TransmissionEntryBase', schema.keys())

@@ -4,8 +4,9 @@
 from __future__ import division, print_function, absolute_import
 import argparse
 
-from ngts_transmission import (logger, connect_to_database,
-                               add_database_arguments, database_schema)
+from ngts_transmission.utils import logger
+from ngts_transmission.db import (connect_to_database, add_database_arguments,
+                                  database_schema)
 
 
 def main(args):
