@@ -11,5 +11,14 @@
 
 
 class Job(object):
+
     def __init__(self, filename):
         self.filename = filename
+
+    def __eq__(self, other):
+        return self.filename == other.filename
+
+
+def fetch_transmission_jobs():
+    filename = '/ngts/das03/action106267_observeField/IMAGE80520150920234004.fits'
+    return iter([Job(filename)])
