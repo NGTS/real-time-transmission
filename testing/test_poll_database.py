@@ -1,6 +1,17 @@
+import pytest
 import pymysql
 
 from ngts_transmission import watching as w
+
+
+@pytest.fixture
+def filename():
+    return '/ngts/das03/action106267_observeField/IMAGE80520150920234004.fits'
+
+
+@pytest.fixture
+def jobs(filename):
+    return iter([w.Job(filename=filename),])
 
 
 def test_database_initialised(job_db, connection):
