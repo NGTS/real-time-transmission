@@ -7,7 +7,7 @@ def test_database_initialised(job_db, connection):
     cursor = connection.cursor()
     cursor.execute('select count(*) from job_args')
     nrows, = cursor.fetchone()
-    assert nrows > 0
+    assert nrows == 6
 
 
 def test_query_for_jobs():
