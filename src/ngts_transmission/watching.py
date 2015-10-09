@@ -28,7 +28,7 @@ where expires > now()
 and job_type = 'transparency'
 group by job_id
 order by submitted desc
-limit 100
+limit 20
 '''.format(sep=SEP)
 
 REFCAT_QUERY = '''
@@ -45,7 +45,7 @@ AG_REFIMAGE_PATH = os.path.join('/', 'ngts', 'autoguider_ref')
 RADIUS_INNER = 4.
 RADIUS_OUTER = 8.
 
-SLEEP_TIME = 60  # Seconds
+SLEEP_TIME = 30  # Seconds
 
 
 class Job(object):
