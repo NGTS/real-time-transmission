@@ -1,4 +1,4 @@
-t''
+'''
 * Poll the database for "transmission" entries in the queue
 * When there are some entries:
     * check for if there is a reference source list
@@ -9,8 +9,10 @@ t''
     * extract the sources
 '''
 
+import pymysql
 import os
 from astropy.io import fits
+import time
 
 from ngts_transmission.utils import NullPool, logger, open_fits
 from ngts_transmission.transmission import TransmissionEntry
@@ -64,6 +66,9 @@ class Job(object):
                                         sky_radius_outer=RADIUS_OUTER)
         t.upload_to_database(cursor)
 
+    def remove_from_database(self, cursor):
+        pass
+
     def __eq__(self, other):
         return self.filename == other.filename
 
@@ -100,3 +105,31 @@ def ref_image_path(ref_image_id, cursor):
             image_id=ref_image_id))
     row = cursor.fetchone()
     return os.path.join(AG_REFIMAGE_PATH, row[0])
+
+
+def watcher_loop_step(cursor):
+    transmission_jobs = fetch_transmission_jobs(cursor)
+    for transmission_job in transmission_jobs:
+        transmission_job.update(cursor)
+        transmission_job.remove_from_database(cursor)
+
+
+def watcher(connection):
+    logger.info('Starting watcher')
+    while True:
+        cursor = connection.cursor()
+        try:
+            watcher_loop_step(cursor)
+        except Exception as err:
+            logger.exception('Exception occurred: %s' % str(err))
+            connection.rollback()
+        else:
+            connection.commit()
+
+        time.sleep(30)
+
+
+
+if __name__ == '__main__':
+    connection = pymysql.connect(user='ops', db='ngts_ops')
+    watcher.connection(connection)
