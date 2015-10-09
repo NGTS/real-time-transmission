@@ -32,6 +32,13 @@ def connect_to_database(user, host, db, unix_socket):
             logger.debug('Closing database connection')
 
 
+@contextmanager
+def transaction(connection):
+    with connection as cursor:
+        yield cursor
+        logger.debug('Committing')
+
+
 def add_database_arguments(parser):
     parser.add_argument('--db-socket',
                         required=False,

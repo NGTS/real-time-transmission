@@ -17,6 +17,7 @@ import time
 from ngts_transmission.utils import logger, open_fits
 from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
+from ngts_transmission.db import transaction
 
 # Limit the query to only 20 objects per 60 seconds
 SEP = '|'
@@ -138,18 +139,18 @@ def ref_image_path(ref_image_id, cursor):
 def watcher_loop_step(connection):
     # Starts transaction for job_queue table, short lived so Paladin should not
     # have a write lock
-    with connection as cursor:
+    with transaction(connection) as cursor:
         transmission_jobs = fetch_transmission_jobs(cursor)
-        logger.debug('Committing')
 
-    logger.info('Found %s jobs', len(transmission_jobs))
+    njobs = len(transmission_jobs)
+    logger.info('Found %s jobs', njobs)
 
     # Separate transaction for updating transmission database
-    with connection as cursor:
-        for transmission_job in transmission_jobs:
-                transmission_job.update(cursor)
-                transmission_job.remove_from_database(cursor)
-        logger.debug('Committing')
+    with transaction(connection) as cursor:
+        for i, transmission_job in enumerate(transmission_jobs):
+            logger.info('Job %d/%d', i, njobs)
+            transmission_job.update(cursor)
+            transmission_job.remove_from_database(cursor)
 
 
 def watcher(connection):
