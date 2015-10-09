@@ -21,5 +21,5 @@ def test_query_for_reference_ids(cursor, ref_id):
 
 
 def test_query_no_ref_catalogue_exists(cursor, ref_id):
-    cursor.execute.return_value = []
+    cursor.__iter__.return_value = []
     assert ref_catalogue_exists(cursor, ref_id) == False
