@@ -136,13 +136,16 @@ def ref_image_path(ref_image_id, cursor):
 
 
 def watcher_loop_step(connection):
-    # Starts transaction
+    # Starts transaction for job_queue table, short lived so Paladin should not
+    # have a write lock
     with connection as cursor:
         transmission_jobs = fetch_transmission_jobs(cursor)
+
+    # Separate transaction for updating transmission database
+    with connection as cursor:
         for transmission_job in transmission_jobs:
-            transmission_job.update(cursor)
-            transmission_job.remove_from_database(cursor)
-        logger.debug('Committing')
+                transmission_job.update(cursor)
+                transmission_job.remove_from_database(cursor)
 
 
 def watcher(connection):
