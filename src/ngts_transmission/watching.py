@@ -14,6 +14,7 @@ from astropy.io import fits
 
 from ngts_transmission.utils import NullPool, logger, open_fits
 from ngts_transmission.transmission import TransmissionEntry
+from ngts_transmission.catalogue import build_catalogue
 
 SEP = '|'
 JOB_QUERY = '''
@@ -53,7 +54,8 @@ class Job(object):
         ref_image_id = get_refcat_id(self.filename)
         if not ref_catalogue_exists(cursor, ref_image_id):
             logger.info('Reference catalogue missing, creating')
-            raise RuntimeError("Cannot find reference catalogue")
+            ref_image_filename = ref_image_path(ref_image_id, cursor)
+            build_catalogue(ref_image_filename, cursor)
         else:
             logger.info('Reference catalogue exists')
 
