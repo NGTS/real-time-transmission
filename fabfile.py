@@ -1,6 +1,9 @@
 from glob import iglob
 from fabric.api import *
 
+env.hosts = ['par-ds']
+env.use_ssh_config = True
+
 
 @task
 def test():
@@ -19,3 +22,12 @@ def test_shell():
     for filename in files:
         puts('Testing file %s' % filename)
         local('bash %s' % filename)
+
+
+@task
+def deploy(branch='master'):
+    puts('Deploying branch %s' % branch)
+    with cd('~/srw/real-time-transmission'):
+        run('git fetch origin')
+        run('git checkout .')
+        run('git merge --ff origin/{branch}'.format(branch=branch))
