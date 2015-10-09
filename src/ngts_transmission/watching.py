@@ -147,10 +147,12 @@ def watcher(connection):
         else:
             connection.commit()
 
+        logger.debug('Sleeping')
         time.sleep(30)
 
 
 def main():
+    logger.setLevel('DEBUG')
     connection = pymysql.connect(host='ngts-par-ds', user='ops', db='ngts_ops')
     watcher(connection)
 
