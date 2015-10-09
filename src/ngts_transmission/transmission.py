@@ -96,11 +96,8 @@ class Photometry(object):
         return self.__class__(
             self.x, self.y, self.radius, self.flux / other.flux)
 
-
-def extract_photometry_results(filename, cursor, image_id, sky_radius_inner,
-                               sky_radius_outer):
-    '''placeholder for Max's code'''
-    ref_image_id = query_for_ref_image_id(image_id, cursor)
+def extract_photometry_results_from_ref_id(filename, ref_image_id, cursor,
+                                           sky_radius_inner, sky_radius_outer):
     ref_catalogue = Photometry.from_database(cursor, ref_image_id)
     source_flux = Photometry.extract_from_file(
         filename, ref_catalogue, sky_radius_inner, sky_radius_outer)
@@ -117,6 +114,13 @@ def extract_photometry_results(filename, cursor, image_id, sky_radius_inner,
         'flux_ratio_stdev': float(flux_ratio.flux.std()),
         'flag': flux_ratio.flag(),
     }
+
+def extract_photometry_results(filename, cursor, image_id, sky_radius_inner,
+                               sky_radius_outer):
+    '''placeholder for Max's code'''
+    ref_image_id = query_for_ref_image_id(image_id, cursor)
+    return extract_photometry_results_from_ref_id(
+        filename, ref_image_id, cursor, sky_radius_inner, sky_radius_outer)
 
 
 class TransmissionEntry(TransmissionEntryBase):
