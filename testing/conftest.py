@@ -34,7 +34,7 @@ def job_db(job_db_query):
     cursor.execute('''
         insert into job_queue (job_type, submitted, expires)
         values (%s, %s, %s)
-        ''', ('transmission', past, future))
+        ''', ('transparency', past, future))
     row_id = cursor.lastrowid
     cursor.execute('''
         insert into job_args (job_id, arg_key, arg_value)

@@ -23,6 +23,7 @@ JOB_QUERY = '''
 select group_concat(concat_ws('=', arg_key, arg_value) separator '{sep}') as args
 from job_queue left join job_args using (job_id)
 where expires > now()
+and job_type = 'transparency'
 group by job_id
 '''.format(sep=SEP)
 
