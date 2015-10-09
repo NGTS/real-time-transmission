@@ -27,6 +27,7 @@ from job_queue left join job_args using (job_id)
 where expires > now()
 and job_type = 'transparency'
 group by job_id
+order by submitted desc
 limit 100
 '''.format(sep=SEP)
 
