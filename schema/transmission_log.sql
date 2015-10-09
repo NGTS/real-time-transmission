@@ -1,0 +1,1 @@
+create table transmission_log (mean_flux_ratio double not null, image_mean_flux double not null, image_id bigint primary key, flag integer default 0, flux_ratio_lq double not null, flux_ratio_stdev double not null, median_flux_ratio double not null, flux_ratio_uq double not null, flux_ratio_err double not null);
