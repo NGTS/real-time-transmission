@@ -65,13 +65,27 @@ class Job(object):
         else:
             logger.info('Reference catalogue exists')
 
-        t = TransmissionEntry.from_file(self.filename, cursor,
+        t = TransmissionEntry.from_file(self.real_filename, cursor,
                                         sky_radius_inner=RADIUS_INNER,
                                         sky_radius_outer=RADIUS_OUTER)
         t.upload_to_database(cursor)
 
     def remove_from_database(self, cursor):
         pass
+
+
+    @property
+    def real_filename(self):
+        '''
+        If the file is compressed, return the compressed filename
+        '''
+        trial_names = [self.filename, '{filename}.bz2'.format(
+            filename=self.filename)]
+        for filename in trial_names:
+            if os.path.isfile(filename):
+                return filename
+        raise OSError('Cannot find any of the files: {files}'.format(
+            files=', '.join(trial_names)))
 
     def __eq__(self, other):
         return self.filename == other.filename
