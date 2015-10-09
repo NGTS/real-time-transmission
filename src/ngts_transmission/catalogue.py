@@ -202,10 +202,11 @@ def render_fits_catalogue(data, fname):
     hdulist.writeto(fname, clobber=True)
 
 
-def build_catalogue(refimage, n_pixels, threshold, fwhmfilt, isolation_radius,
-                    aperture_radius, db_host, db_user, db_name, db_socket,
-                    region_filename=False,
-                    fits_out=None):
+def build_catalogue(refimage, cursor=None,
+                    db_host=None, db_user=None, db_name=None, db_socket=None,
+                    n_pixels=2, threshold=3, fwhmfilt=1.5,
+                    isolation_radius=6, aperture_radius=3,
+                    region_filename=None, fits_out=None):
 
     file_info = list(extract_from_file(
         refimage,
@@ -216,11 +217,14 @@ def build_catalogue(refimage, n_pixels, threshold, fwhmfilt, isolation_radius,
         isolation_radius=isolation_radius,
         aperture_radius=aperture_radius))
 
-    with connect_to_database(user=db_user,
-                             host=db_host,
-                             db=db_name,
-                             unix_socket=db_socket) as cursor:
+    if cursor:
         upload_info(file_info, cursor)
+    else:
+        with connect_to_database(user=db_user,
+                                host=db_host,
+                                db=db_name,
+                                unix_socket=db_socket) as cursor:
+            upload_info(file_info, cursor)
 
     if fits_out is not None:
         render_fits_catalogue(file_info, fits_out)
