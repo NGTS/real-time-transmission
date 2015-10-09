@@ -6,9 +6,33 @@ import argparse
 
 from ngts_transmission.catalogue import (extract_from_file, upload_info,
                                          render_fits_catalogue)
-from ngts_transmission.db import (connect_to_database_from_args,
+from ngts_transmission.db import (connect_to_database,
                                   add_database_arguments)
 from ngts_transmission.utils import logger
+
+
+def build_catalogue(refimage, n_pixels, threshold, fwhmfilt, isolation_radius,
+                    aperture_radius, db_host, db_user, db_name, db_socket,
+                    region_filename=False,
+                    fits_out=None):
+
+    file_info = list(extract_from_file(
+        refimage,
+        region_filename=region_filename,
+        n_pixels=n_pixels,
+        threshold=threshold,
+        fwhmfilt=fwhmfilt,
+        isolation_radius=isolation_radius,
+        aperture_radius=aperture_radius))
+
+    with connect_to_database(user=db_user,
+                             host=db_host,
+                             db=db_name,
+                             unix_socket=db_socket) as cursor:
+        upload_info(file_info, cursor)
+
+    if fits_out is not None:
+        render_fits_catalogue(file_info, fits_out)
 
 
 def main(args):
@@ -16,20 +40,19 @@ def main(args):
         logger.setLevel('DEBUG')
     logger.debug(args)
 
-    file_info = list(extract_from_file(
-        args.refimage,
+    build_catalogue(
+        refimage=args.refimage,
         region_filename=args.refimage + '.reg',
         n_pixels=args.npix,
         threshold=args.threshold,
         fwhmfilt=args.fwhmfilt,
         isolation_radius=args.isolation_radius,
-        aperture_radius=args.aperture_radius,))
-
-    with connect_to_database_from_args(args) as cursor:
-        upload_info(file_info, cursor)
-
-    if args.fits_out is not None:
-        render_fits_catalogue(file_info, args.fits_out)
+        aperture_radius=args.aperture_radius,
+        db_host=args.db_host,
+        db_user=args.db_user,
+        db_name=args.db_name,
+        db_socket=args.db_socket,
+        fits_out=args.fits_out,)
 
 
 if __name__ == '__main__':
