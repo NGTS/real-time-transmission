@@ -156,7 +156,7 @@ def watcher(connection):
     logger.info('Starting watcher')
     while True:
         watcher_loop_step(connection)
-        logger.debug('Sleeping')
+        logger.debug('Sleeping for %s seconds', SLEEP_TIME)
         time.sleep(SLEEP_TIME)
 
 
