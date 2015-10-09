@@ -8,18 +8,25 @@ from ngts_transmission.utils import logger
 
 @contextmanager
 def connect_to_database_from_args(args):
-    if args.db_host is not None:
-        with pymysql.connect(user=args.db_user,
+    socket = args.db_socket if args.db_socket is not None else '/var/lib/mysql/mysql.sock'
+    with connect_to_database(user=args.db_user,
                              host=args.db_host,
-                             db=args.db_name) as cursor:
+                             db=args.db_name,
+                             unix_socket=socket) as cursor:
+        yield cursor
+
+
+@contextmanager
+def connect_to_database(user, host, db, unix_socket):
+    if host is not None:
+        with pymysql.connect(user=user, host=host, db=db) as cursor:
             logger.debug('Connected to database')
             yield cursor
             logger.debug('Closing database connection')
     else:
-        socket = args.db_socket if args.db_socket is not None else '/var/lib/mysql/mysql.sock'
-        with pymysql.connect(user=args.db_user,
-                             unix_socket=socket,
-                             db=args.db_name) as cursor:
+        with pymysql.connect(user=user,
+                             unix_socket=unix_socket,
+                             db=db) as cursor:
             logger.debug('Connected to database')
             yield cursor
             logger.debug('Closing database connection')
@@ -45,4 +52,3 @@ def database_schema():
     path = os.path.join(os.path.dirname(__file__), 'columns.json')
     with open(path) as infile:
         return json.load(infile)
-
