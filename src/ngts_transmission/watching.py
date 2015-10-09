@@ -9,6 +9,8 @@
     * extract the sources
 '''
 
+import os
+
 SEP = '|'
 JOB_QUERY = '''
 select group_concat(concat_ws('=', arg_key, arg_value) separator '{sep}') as args
@@ -21,6 +23,12 @@ REFCAT_QUERY = '''
 select distinct ref_image_id
 from transmission_sources
 '''
+
+REFFILENAME_QUERY = '''
+select filename from autoguider_refimage where ref_image_id = %s
+'''
+
+AG_REFIMAGE_PATH = os.path.join('/', 'ngts', 'autoguider_ref')
 
 
 class Job(object):
@@ -53,3 +61,13 @@ def ref_catalogue_exists(cursor, ref_id):
 def get_refcat_id(filename):
     header = fits.getheader(filename)
     return header['agrefimg']
+
+
+def ref_image_path(image_id, connection):
+    cursor = connection.cursor()
+    cursor.execute(REFFILENAME_QUERY, (image_id,))
+    if cursor.rowcount == 0:
+        raise KeyError('Cannot find filename for image {image_id}'.format(
+            image_id=image_id))
+    row = cursor.fetchone()
+    return os.path.join(AG_REFIMAGE_PATH, row[0])
