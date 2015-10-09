@@ -114,8 +114,8 @@ image'''
         self.fptr.write(header + '\n')
 
 
-def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
-                      isolation_radius, aperture_radius):
+def extract_from_file(fname, n_pixels, threshold, fwhmfilt,
+                      isolation_radius, aperture_radius, region_filename=None):
     logger.info('Extracting catalogue from %s', fname)
     with open_fits(fname) as infile:
         header = infile[0].header
@@ -131,9 +131,11 @@ def extract_from_file(fname, region_filename, n_pixels, threshold, fwhmfilt,
                                                 radius=isolation_radius)
     logger.info('Keeping %s sources', len(filtered_source_table))
 
-    with RegionFile(region_filename, aperture_radius=aperture_radius) as rfile:
-        rfile.add_regions(filtered_source_table, colour='green')
-        rfile.add_regions(source_table, colour='red')
+    if region_filename is not None:
+        with RegionFile(region_filename,
+                        aperture_radius=aperture_radius) as rfile:
+            rfile.add_regions(filtered_source_table, colour='green')
+            rfile.add_regions(source_table, colour='red')
 
     inc_prescan = image_has_prescan(fname)
     logger.debug('Image has prescan: %s', inc_prescan)

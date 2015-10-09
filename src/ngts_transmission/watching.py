@@ -1,4 +1,4 @@
-'''
+t''
 * Poll the database for "transmission" entries in the queue
 * When there are some entries:
     * check for if there is a reference source list
