@@ -148,7 +148,7 @@ def watcher_loop_step(connection):
     # Separate transaction for updating transmission database
     with transaction(connection) as cursor:
         for i, transmission_job in enumerate(transmission_jobs):
-            logger.info('Job %d/%d', i, njobs)
+            logger.info('Job %d/%d', i + 1, njobs)
             transmission_job.update(cursor)
             transmission_job.remove_from_database(cursor)
 
