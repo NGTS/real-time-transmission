@@ -65,6 +65,9 @@ class Job(object):
     def __eq__(self, other):
         return self.filename == other.filename
 
+    def __str__(self):
+        return '<TransmissionJob {self.filename}>'.format(self=self)
+
 
 def fetch_transmission_jobs(cursor):
     cursor.execute(JOB_QUERY)
