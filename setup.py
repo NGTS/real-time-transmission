@@ -15,5 +15,10 @@ setup(
     package_data={
         '': ['*.json'],
     },
+    entry_points={
+        'console_scripts': [
+            'ngtransmission = ngts_transmission.watching:main',
+        ],
+    },
 )
 

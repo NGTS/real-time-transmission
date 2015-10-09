@@ -131,7 +131,7 @@ def watcher(connection):
 
 def main():
     connection = pymysql.connect(user='ops', db='ngts_ops')
-    watcher.connection(connection)
+    watcher(connection)
 
 
 if __name__ == '__main__':
