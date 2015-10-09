@@ -14,7 +14,7 @@ import os
 from astropy.io import fits
 import time
 
-from ngts_transmission.utils import NullPool, logger, open_fits
+from ngts_transmission.utils import logger, open_fits
 from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 
@@ -129,7 +129,10 @@ def watcher(connection):
         time.sleep(30)
 
 
-
-if __name__ == '__main__':
+def main():
     connection = pymysql.connect(user='ops', db='ngts_ops')
     watcher.connection(connection)
+
+
+if __name__ == '__main__':
+    main()
