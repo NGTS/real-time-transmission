@@ -134,26 +134,20 @@ def ref_image_path(ref_image_id, cursor):
     return os.path.join(AG_REFIMAGE_PATH, row[0])
 
 
-def watcher_loop_step(cursor):
-    transmission_jobs = fetch_transmission_jobs(cursor)
-    for transmission_job in transmission_jobs:
-        transmission_job.update(cursor)
-        transmission_job.remove_from_database(cursor)
+def watcher_loop_step(connection):
+    # Starts transaction
+    with connection as cursor:
+        transmission_jobs = fetch_transmission_jobs(cursor)
+        for transmission_job in transmission_jobs:
+            transmission_job.update(cursor)
+            # XXX Add this back in after testing
+            # transmission_job.remove_from_database(cursor)
 
 
 def watcher(connection):
     logger.info('Starting watcher')
     while True:
-        cursor = connection.cursor()
-        try:
-            watcher_loop_step(cursor)
-        except Exception as err:
-            logger.exception('Exception occurred: %s' % str(err))
-            connection.rollback()
-        else:
-            connection.commit()
-
-        logger.debug('Sleeping')
+        watcher_loop_step(connection)
         time.sleep(SLEEP_TIME)
 
 
