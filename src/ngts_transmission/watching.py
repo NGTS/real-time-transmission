@@ -14,7 +14,7 @@ import os
 from astropy.io import fits
 import time
 
-from ngts_transmission.utils import logger, open_fits
+from ngts_transmission.utils import logger, open_fits, time_context
 from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 from ngts_transmission.db import transaction
@@ -156,7 +156,8 @@ def watcher_loop_step(connection):
 def watcher(connection):
     logger.info('Starting watcher')
     while True:
-        watcher_loop_step(connection)
+        with time_context():
+            watcher_loop_step(connection)
         logger.debug('Sleeping for %s seconds', SLEEP_TIME)
         time.sleep(SLEEP_TIME)
 
