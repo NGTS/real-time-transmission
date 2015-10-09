@@ -11,6 +11,7 @@ setup(
         'pymysql',
         'numpy',
         'scipy',
+        'photutils',
     ],
     package_data={
         '': ['*.json'],
