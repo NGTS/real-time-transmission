@@ -44,6 +44,8 @@ AG_REFIMAGE_PATH = os.path.join('/', 'ngts', 'autoguider_ref')
 RADIUS_INNER = 4.
 RADIUS_OUTER = 8.
 
+SLEEP_TIME = 60  # Seconds
+
 
 class Job(object):
 
@@ -151,7 +153,7 @@ def watcher(connection):
             connection.commit()
 
         logger.debug('Sleeping')
-        time.sleep(30)
+        time.sleep(SLEEP_TIME)
 
 
 def main():
