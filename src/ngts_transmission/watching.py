@@ -140,12 +140,16 @@ def watcher_loop_step(connection):
     # have a write lock
     with connection as cursor:
         transmission_jobs = fetch_transmission_jobs(cursor)
+        logger.debug('Committing')
+
+    logger.info('Found %s jobs', len(transmission_jobs))
 
     # Separate transaction for updating transmission database
     with connection as cursor:
         for transmission_job in transmission_jobs:
                 transmission_job.update(cursor)
                 transmission_job.remove_from_database(cursor)
+        logger.debug('Committing')
 
 
 def watcher(connection):
