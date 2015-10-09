@@ -140,6 +140,7 @@ def watcher_loop_step(connection):
         for transmission_job in transmission_jobs:
             transmission_job.update(cursor)
             transmission_job.remove_from_database(cursor)
+        logger.debug('Committing')
 
 
 def watcher(connection):
