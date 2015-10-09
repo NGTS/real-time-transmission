@@ -61,7 +61,7 @@ class Job(object):
         return cls(job_id=job_id, filename=mapping['file'])
 
     def update(self, cursor):
-        ref_image_id = get_refcat_id(self.filename)
+        ref_image_id = get_refcat_id(self.real_filename)
         if not ref_catalogue_exists(cursor, ref_image_id):
             logger.info('Reference catalogue missing, creating')
             ref_image_filename = ref_image_path(ref_image_id, cursor)
