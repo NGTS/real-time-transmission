@@ -75,6 +75,7 @@ class Job(object):
         t.upload_to_database(cursor)
 
     def remove_from_database(self, cursor):
+        logger.info('Removing {self} from the database'.format(self=self))
         cursor.execute('delete from job_queue where job_id = %s',
                        (self.job_id,))
 
