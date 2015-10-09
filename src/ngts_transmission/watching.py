@@ -71,7 +71,8 @@ class Job(object):
         t.upload_to_database(cursor)
 
     def remove_from_database(self, cursor):
-        pass
+        cursor.execute('delete from job_queue where job_id = %s',
+                       (self.job_id,))
 
 
     @property
