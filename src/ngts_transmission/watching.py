@@ -19,6 +19,7 @@ from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 
 # Limit the query to only 100 objects per 60 seconds
+# XXX set limit to 100 when testing is over
 SEP = '|'
 JOB_QUERY = '''
 select
@@ -27,7 +28,7 @@ from job_queue left join job_args using (job_id)
 where expires > now()
 and job_type = 'transparency'
 group by job_id
-limit 100
+limit 5
 '''.format(sep=SEP)
 
 REFCAT_QUERY = '''
