@@ -10,6 +10,10 @@
 '''
 
 import os
+from astropy.io import fits
+
+from ngts_transmission.utils import NullPool, logger, open_fits
+from ngts_transmission.transmission import TransmissionEntry
 
 SEP = '|'
 JOB_QUERY = '''
@@ -30,6 +34,9 @@ select filename from autoguider_refimage where ref_image_id = %s
 
 AG_REFIMAGE_PATH = os.path.join('/', 'ngts', 'autoguider_ref')
 
+RADIUS_INNER = 4.
+RADIUS_OUTER = 8.
+
 
 class Job(object):
 
@@ -41,6 +48,19 @@ class Job(object):
         args = row.split(SEP)
         mapping = dict([arg.split('=') for arg in args])
         return cls(filename=mapping['file'])
+
+    def update(self, cursor):
+        ref_image_id = get_refcat_id(self.filename)
+        if not ref_catalogue_exists(cursor, ref_image_id):
+            logger.info('Reference catalogue missing, creating')
+            raise RuntimeError("Cannot find reference catalogue")
+        else:
+            logger.info('Reference catalogue exists')
+
+        t = TransmissionEntry.from_file(self.filename, cursor,
+                                        sky_radius_inner=RADIUS_INNER,
+                                        sky_radius_outer=RADIUS_OUTER)
+        t.upload_to_database(cursor)
 
     def __eq__(self, other):
         return self.filename == other.filename
