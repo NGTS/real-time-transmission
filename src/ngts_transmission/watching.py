@@ -48,3 +48,8 @@ def ref_catalogue_exists(cursor, ref_id):
     cursor.execute(REFCAT_QUERY)
     ref_ids = set([row[0] for row in cursor])
     return ref_id in ref_ids
+
+
+def get_refcat_id(filename):
+    header = fits.getheader(filename)
+    return header['agrefimg']
