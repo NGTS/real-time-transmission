@@ -63,8 +63,7 @@ def get_refcat_id(filename):
     return header['agrefimg']
 
 
-def ref_image_path(image_id, connection):
-    cursor = connection.cursor()
+def ref_image_path(image_id, cursor):
     cursor.execute(REFFILENAME_QUERY, (image_id,))
     if cursor.rowcount == 0:
         raise KeyError('Cannot find filename for image {image_id}'.format(
