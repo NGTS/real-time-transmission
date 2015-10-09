@@ -82,7 +82,8 @@ def ref_catalogue_exists(cursor, ref_id):
 
 
 def get_refcat_id(filename):
-    header = fits.getheader(filename)
+    with open_fits(filename) as infile:
+        header = infile[0].header
     return header['agrefimg']
 
 
