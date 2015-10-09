@@ -18,7 +18,7 @@ from ngts_transmission.utils import logger, open_fits
 from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 
-# Limit the query to only 100 objects per 60 seconds
+# Limit the query to only 20 objects per 60 seconds
 SEP = '|'
 JOB_QUERY = '''
 select
