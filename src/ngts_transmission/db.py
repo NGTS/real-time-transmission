@@ -52,3 +52,13 @@ def database_schema():
     path = os.path.join(os.path.dirname(__file__), 'columns.json')
     with open(path) as infile:
         return json.load(infile)
+
+
+def raw_create_table(name, column_map):
+    column_defs = column_map[name]
+    column_text = (', '.join([
+        ' '.join([k, v]) for (k, v) in column_defs.items()
+    ]))
+    return 'create table {table_name} ({column_text})'.format(
+        table_name=name,
+        column_text=column_text)

@@ -6,7 +6,7 @@ import argparse
 
 from ngts_transmission.utils import logger
 from ngts_transmission.db import (connect_to_database_from_args, add_database_arguments,
-                                  database_schema)
+                                  database_schema, raw_create_table)
 
 
 def main(args):
@@ -17,13 +17,8 @@ def main(args):
     schema = database_schema()
 
     tables = {}
-    for table_name, column_defs in schema.items():
-        column_text = (', '.join([
-            ' '.join([k, v]) for (k, v) in column_defs.items()
-        ]))
-        query = 'create table {table_name} ({column_text})'.format(
-            table_name=table_name,
-            column_text=column_text)
+    for table_name in schema:
+        query = raw_create_table(table_name, schema)
         tables[table_name] = query
 
     with connect_to_database_from_args(args) as cursor:
