@@ -93,10 +93,10 @@ def get_refcat_id(filename):
     return header['agrefimg']
 
 
-def ref_image_path(image_id, cursor):
-    cursor.execute(REFFILENAME_QUERY, (image_id,))
+def ref_image_path(ref_image_id, cursor):
+    cursor.execute(REFFILENAME_QUERY, (ref_image_id,))
     if cursor.rowcount == 0:
         raise KeyError('Cannot find filename for image {image_id}'.format(
-            image_id=image_id))
+            image_id=ref_image_id))
     row = cursor.fetchone()
     return os.path.join(AG_REFIMAGE_PATH, row[0])
