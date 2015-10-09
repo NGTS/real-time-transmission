@@ -27,6 +27,7 @@ def test_shell():
 @task
 def deploy(branch='master'):
     puts('Deploying branch %s' % branch)
+    local('git push origin {branch}'.format(branch=branch))
     with cd('~/srw/real-time-transmission'):
         run('git fetch origin')
         run('git checkout .')
