@@ -48,7 +48,7 @@ def cursor(connection):
 
 def test_integrate(target_file, connection, clear_entries):
     cursor = connection.cursor()
-    job = Job(filename=target_file)
+    job = Job(job_id=None, filename=target_file)
     job.update(cursor)
     connection.commit()
     cursor.execute('select * from transmission_log where image_id = %s',
@@ -62,7 +62,7 @@ def test_integrate_without_refcat(ref_image_path, target_file, connection,
                                   refimage_file):
     ref_image_path.return_value = refimage_file
     cursor = connection.cursor()
-    job = Job(filename=target_file)
+    job = Job(job_id=None, filename=target_file)
     job.update(cursor)
     connection.commit()
     cursor.execute('select * from transmission_log where image_id = %s',

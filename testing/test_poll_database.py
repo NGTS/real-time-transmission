@@ -11,7 +11,7 @@ def filename():
 
 @pytest.fixture
 def jobs(filename):
-    return iter([w.Job(filename=filename),])
+    return iter([w.Job(job_id=None, filename=filename),])
 
 
 def test_database_initialised(job_db, connection):
@@ -29,5 +29,5 @@ def test_query_for_jobs(job_db, connection, jobs):
 
 def test_job_class():
     filename = 'test'
-    j = w.Job(filename=filename)
+    j = w.Job(job_id=None, filename=filename)
     assert j.filename == filename

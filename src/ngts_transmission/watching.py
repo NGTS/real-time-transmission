@@ -20,7 +20,8 @@ from ngts_transmission.catalogue import build_catalogue
 
 SEP = '|'
 JOB_QUERY = '''
-select group_concat(concat_ws('=', arg_key, arg_value) separator '{sep}') as args
+select
+    job_id, group_concat(concat_ws('=', arg_key, arg_value) separator '{sep}') as args
 from job_queue left join job_args using (job_id)
 where expires > now()
 and job_type = 'transparency'
@@ -44,14 +45,16 @@ RADIUS_OUTER = 8.
 
 class Job(object):
 
-    def __init__(self, filename):
+    def __init__(self, job_id, filename):
+        self.job_id = job_id
         self.filename = filename
 
     @classmethod
     def from_row(cls, row):
-        args = row.split(SEP)
+        job_id, args = row
+        args = args.split(SEP)
         mapping = dict([arg.split('=') for arg in args])
-        return cls(filename=mapping['file'])
+        return cls(job_id=job_id, filename=mapping['file'])
 
     def update(self, cursor):
         ref_image_id = get_refcat_id(self.filename)
@@ -80,7 +83,7 @@ class Job(object):
 def fetch_transmission_jobs(cursor):
     logger.info('Fetching transmission jobs')
     cursor.execute(JOB_QUERY)
-    for row, in cursor:
+    for row in cursor:
         yield Job.from_row(row)
 
 
