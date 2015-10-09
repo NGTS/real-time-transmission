@@ -100,8 +100,9 @@ class Job(object):
 def fetch_transmission_jobs(cursor):
     logger.info('Fetching transmission jobs')
     cursor.execute(JOB_QUERY)
-    for row in cursor:
-        yield Job.from_row(row)
+    # Prefetch the jobs to allow the cursor to perform another query
+    jobs = cursor.fetchall()
+    return [Job.from_row(row) for row in jobs]
 
 
 def ref_catalogue_exists(cursor, ref_id):
