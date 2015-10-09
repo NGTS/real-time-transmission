@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 import argparse
 
 from ngts_transmission.utils import logger
-from ngts_transmission.db import (connect_to_database, add_database_arguments,
+from ngts_transmission.db import (connect_to_database_from_args, add_database_arguments,
                                   database_schema)
 
 
@@ -26,7 +26,7 @@ def main(args):
             column_text=column_text)
         tables[table_name] = query
 
-    with connect_to_database(args) as cursor:
+    with connect_to_database_from_args(args) as cursor:
         for table_name, query in tables.items():
             cursor.execute('drop table if exists {table_name}'.format(
                 table_name=table_name))

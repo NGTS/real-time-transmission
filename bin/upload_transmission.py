@@ -5,7 +5,8 @@ from __future__ import division, print_function, absolute_import
 import argparse
 
 from ngts_transmission.utils import logger
-from ngts_transmission.db import add_database_arguments, connect_to_database
+from ngts_transmission.db import (add_database_arguments,
+                                  connect_to_database_from_args)
 from ngts_transmission.transmission import TransmissionEntry
 
 
@@ -14,7 +15,7 @@ def main(args):
         logger.setLevel('DEBUG')
     logger.debug(args)
 
-    with connect_to_database(args) as cursor:
+    with connect_to_database_from_args(args) as cursor:
         entry = TransmissionEntry.from_file(args.filename, cursor,
                                             sky_radius_inner=args.radius_inner,
                                             sky_radius_outer=args.radius_outer)

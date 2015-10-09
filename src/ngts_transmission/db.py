@@ -7,7 +7,7 @@ from ngts_transmission.utils import logger
 
 
 @contextmanager
-def connect_to_database(args):
+def connect_to_database_from_args(args):
     if args.db_host is not None:
         with pymysql.connect(user=args.db_user,
                              host=args.db_host,

@@ -6,7 +6,8 @@ import argparse
 
 from ngts_transmission.catalogue import (extract_from_file, upload_info,
                                          render_fits_catalogue)
-from ngts_transmission.db import (connect_to_database, add_database_arguments)
+from ngts_transmission.db import (connect_to_database_from_args,
+                                  add_database_arguments)
 from ngts_transmission.utils import logger
 
 
@@ -24,7 +25,7 @@ def main(args):
         isolation_radius=args.isolation_radius,
         aperture_radius=args.aperture_radius,))
 
-    with connect_to_database(args) as cursor:
+    with connect_to_database_from_args(args) as cursor:
         upload_info(file_info, cursor)
 
     if args.fits_out is not None:
