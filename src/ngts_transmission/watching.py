@@ -19,7 +19,6 @@ from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 
 # Limit the query to only 100 objects per 60 seconds
-# XXX set limit to 100 when testing is over
 SEP = '|'
 JOB_QUERY = '''
 select
@@ -28,7 +27,7 @@ from job_queue left join job_args using (job_id)
 where expires > now()
 and job_type = 'transparency'
 group by job_id
-limit 5
+limit 100
 '''.format(sep=SEP)
 
 REFCAT_QUERY = '''
@@ -140,8 +139,7 @@ def watcher_loop_step(connection):
         transmission_jobs = fetch_transmission_jobs(cursor)
         for transmission_job in transmission_jobs:
             transmission_job.update(cursor)
-            # XXX Add this back in after testing
-            # transmission_job.remove_from_database(cursor)
+            transmission_job.remove_from_database(cursor)
 
 
 def watcher(connection):
