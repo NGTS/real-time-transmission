@@ -10,12 +10,17 @@
 '''
 
 SEP = '|'
-QUERY = '''
+JOB_QUERY = '''
 select group_concat(concat_ws('=', arg_key, arg_value) separator '{sep}') as args
 from job_queue left join job_args using (job_id)
 where expires > now()
 group by job_id
 '''.format(sep=SEP)
+
+REFCAT_QUERY = '''
+select distinct ref_image_id
+from transmission_sources
+'''
 
 
 class Job(object):
@@ -34,6 +39,12 @@ class Job(object):
 
 
 def fetch_transmission_jobs(cursor):
-    cursor.execute(QUERY)
+    cursor.execute(JOB_QUERY)
     for row, in cursor:
         yield Job.from_row(row)
+
+
+def ref_catalogue_exists(cursor, ref_id):
+    cursor.execute(REFCAT_QUERY)
+    ref_ids = set([row[0] for row in cursor])
+    return ref_id in ref_ids
