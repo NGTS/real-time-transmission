@@ -70,18 +70,22 @@ class Job(object):
 
 
 def fetch_transmission_jobs(cursor):
+    logger.info('Fetching transmission jobs')
     cursor.execute(JOB_QUERY)
     for row, in cursor:
         yield Job.from_row(row)
 
 
 def ref_catalogue_exists(cursor, ref_id):
+    logger.info('Checking if ref image {ref_id} exists'.format(ref_id=ref_id))
     cursor.execute(REFCAT_QUERY)
     ref_ids = set([row[0] for row in cursor])
     return ref_id in ref_ids
 
 
 def get_refcat_id(filename):
+    logger.debug('Extracting reference image id from {filename}'.format(
+        filename=filename))
     with open_fits(filename) as infile:
         header = infile[0].header
     return header['agrefimg']
