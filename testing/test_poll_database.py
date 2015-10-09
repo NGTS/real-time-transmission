@@ -1,6 +1,8 @@
 import mock
 import pytest
 import pymysql
+import os
+import datetime
 
 from ngts_transmission.watching import fetch_transmission_jobs, Job
 
@@ -26,6 +28,29 @@ def test_query_for_jobs(job_db, connection, jobs):
     cursor = connection.cursor()
     db_jobs = fetch_transmission_jobs(cursor)
     assert list(db_jobs) == list(jobs)
+
+
+def test_multiple_jobs(job_db, connection):
+    file_root = os.path.join('/', 'ngts', 'das03', 'action106267_observeField')
+    base = 80520150920234005
+    filenames = [os.path.join(file_root, 'IMAGE{}.fits'.format(base + i))
+                 for i in range(5)]
+    cursor = connection.cursor()
+
+    # Make sure there is one entry always valid
+    past = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+    future = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+
+    for filename in filenames:
+        cursor.execute('''insert into job_queue (job_type, submitted, expires)
+                       values (%s, %s, %s)''', ('transparency', past, future))
+        row_id = cursor.lastrowid
+        cursor.execute('''insert into job_args (job_id, arg_key, arg_value)
+                       values (%s, %s, %s)''', (row_id, 'file', filename))
+
+    db_jobs = list(fetch_transmission_jobs(cursor))
+    assert len(db_jobs) == len(filenames) + 1
+    connection.rollback()
 
 
 def test_job_class():
