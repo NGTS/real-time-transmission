@@ -74,7 +74,6 @@ class Job(object):
         cursor.execute('delete from job_queue where job_id = %s',
                        (self.job_id,))
 
-
     @property
     def real_filename(self):
         '''
@@ -93,6 +92,9 @@ class Job(object):
 
     def __str__(self):
         return '<TransmissionJob {self.filename}>'.format(self=self)
+
+    def __repr__(self):
+        return str(self)
 
 
 def fetch_transmission_jobs(cursor):
