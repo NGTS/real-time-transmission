@@ -131,7 +131,7 @@ def watcher(connection):
 
 
 def main():
-    connection = pymysql.connect(user='ops', db='ngts_ops')
+    connection = pymysql.connect(host='ngts-par-ds', user='ops', db='ngts_ops')
     watcher(connection)
 
 
