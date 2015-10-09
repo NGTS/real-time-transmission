@@ -7,7 +7,7 @@ import numpy as np
 from scipy.spatial import KDTree
 
 from ngts_transmission.utils import logger, open_fits
-from ngts_transmission.db import database_schema
+from ngts_transmission.db import database_schema, connect_to_database
 
 schema = database_schema()['transmission_sources']
 
@@ -114,8 +114,9 @@ image'''
         self.fptr.write(header + '\n')
 
 
-def extract_from_file(fname, n_pixels, threshold, fwhmfilt,
-                      isolation_radius, aperture_radius, region_filename=None):
+def extract_from_file(fname, n_pixels, threshold, fwhmfilt, isolation_radius,
+                      aperture_radius,
+                      region_filename=None):
     logger.info('Extracting catalogue from %s', fname)
     with open_fits(fname) as infile:
         header = infile[0].header
@@ -199,3 +200,27 @@ def render_fits_catalogue(data, fname):
     tbl.name = 'transmission_catalogue'
     hdulist = fits.HDUList([phdu, tbl])
     hdulist.writeto(fname, clobber=True)
+
+
+def build_catalogue(refimage, n_pixels, threshold, fwhmfilt, isolation_radius,
+                    aperture_radius, db_host, db_user, db_name, db_socket,
+                    region_filename=False,
+                    fits_out=None):
+
+    file_info = list(extract_from_file(
+        refimage,
+        region_filename=region_filename,
+        n_pixels=n_pixels,
+        threshold=threshold,
+        fwhmfilt=fwhmfilt,
+        isolation_radius=isolation_radius,
+        aperture_radius=aperture_radius))
+
+    with connect_to_database(user=db_user,
+                             host=db_host,
+                             db=db_name,
+                             unix_socket=db_socket) as cursor:
+        upload_info(file_info, cursor)
+
+    if fits_out is not None:
+        render_fits_catalogue(file_info, fits_out)
