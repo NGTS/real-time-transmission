@@ -1,11 +1,9 @@
 from contextlib import contextmanager
 import bz2
 from astropy.io import fits
-import logging
 import time
 
-logging.basicConfig(level='INFO', format='[%(asctime)s] %(levelname)7s %(message)s')
-logger = logging.getLogger(__name__)
+from ngts_transmission.logs import logger
 
 
 @contextmanager

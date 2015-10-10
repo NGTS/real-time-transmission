@@ -3,7 +3,7 @@ import pymysql
 import json
 import os
 
-from ngts_transmission.utils import logger
+from ngts_transmission.logs import logger
 
 
 @contextmanager

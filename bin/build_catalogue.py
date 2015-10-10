@@ -6,7 +6,7 @@ import argparse
 
 from ngts_transmission.catalogue import build_catalogue
 from ngts_transmission.db import add_database_arguments
-from ngts_transmission.utils import logger
+from ngts_transmission.logs import logger
 
 
 def main(args):

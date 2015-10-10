@@ -3,7 +3,8 @@ import photutils as ph
 from astropy.io import fits
 import numpy as np
 
-from ngts_transmission.utils import logger, open_fits
+from ngts_transmission.logs import logger
+from ngts_transmission.utils import open_fits
 from ngts_transmission.db import database_schema
 
 schema = database_schema()['transmission_log']

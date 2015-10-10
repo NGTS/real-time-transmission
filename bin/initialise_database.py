@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 import argparse
 
-from ngts_transmission.utils import logger
+from ngts_transmission.logs import logger
 from ngts_transmission.db import (connect_to_database_from_args, add_database_arguments,
                                   database_schema, raw_create_table)
 

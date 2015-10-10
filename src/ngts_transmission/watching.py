@@ -14,7 +14,8 @@ import os
 from astropy.io import fits
 import time
 
-from ngts_transmission.utils import logger, open_fits, time_context
+from ngts_transmission.logs import logger
+from ngts_transmission.utils import open_fits, time_context
 from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 from ngts_transmission.db import transaction

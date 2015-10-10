@@ -6,7 +6,8 @@ import subprocess as sp
 import numpy as np
 from scipy.spatial import KDTree
 
-from ngts_transmission.utils import logger, open_fits
+from ngts_transmission.logs import logger
+from ngts_transmission.utils import open_fits
 from ngts_transmission.db import database_schema, connect_to_database
 
 schema = database_schema()['transmission_sources']
