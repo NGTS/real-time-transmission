@@ -149,8 +149,12 @@ def watcher_loop_step(connection):
     with transaction(connection) as cursor:
         for i, transmission_job in enumerate(transmission_jobs):
             logger.info('Job %d/%d', i + 1, njobs)
-            transmission_job.update(cursor)
-            transmission_job.remove_from_database(cursor)
+            try:
+                transmission_job.update(cursor)
+            except Exception as e:
+                logger.exception('Exception occurred: %s', str(e))
+            else:
+                transmission_job.remove_from_database(cursor)
 
 
 def watcher(connection):
