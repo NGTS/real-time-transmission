@@ -4,7 +4,7 @@ from astropy.io import fits
 import logging
 import time
 
-logging.basicConfig(level='INFO', format='%(levelname)7s %(message)s')
+logging.basicConfig(level='INFO', format='[%(asctime)s] %(levelname)7s %(message)s')
 logger = logging.getLogger(__name__)
 
 
