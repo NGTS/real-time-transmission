@@ -141,6 +141,8 @@ def get_refcat_id(filename):
     try:
         return header['agrefimg']
     except KeyError:
+        logger.exception('''No autoguider reference image found in file %s.
+                            Assuming this is ok and continuing.''', filename)
         raise NoAutoguider
 
 

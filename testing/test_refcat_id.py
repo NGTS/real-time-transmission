@@ -1,3 +1,4 @@
+import mock
 from astropy.io import fits
 import pytest
 
@@ -32,8 +33,13 @@ def test_get_refcat_id(with_key, ref_id):
     assert ref_image_id == ref_id
 
 
-def test_get_refcat_id_throws_correct_exception_when_key_missing(without_key):
+@mock.patch('ngts_transmission.watching.logger')
+def test_get_refcat_id_throws_correct_exception_when_key_missing(logger,
+                                                                 without_key):
     with pytest.raises(NoAutoguider) as err:
         get_refcat_id(without_key)
 
     assert 'not autoguided' in str(err).lower()
+    assert logger.exception.call_args_list == [
+        mock.call(mock.ANY, without_key),
+    ]
