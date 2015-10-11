@@ -50,6 +50,12 @@ RADIUS_OUTER = 8.
 SLEEP_TIME = 30  # Seconds
 
 
+class NoAutoguider(Exception):
+
+    def __init__(self):
+        super(NoAutoguider, self).__init__('Image is not autoguided')
+
+
 class Job(object):
 
     def __init__(self, job_id, filename):
@@ -64,7 +70,13 @@ class Job(object):
         return cls(job_id=job_id, filename=mapping['file'])
 
     def update(self, cursor):
-        ref_image_id = get_refcat_id(self.real_filename)
+        try:
+            ref_image_id = get_refcat_id(self.real_filename)
+        except NoAutoguider:
+            # Return early but ensure the job is removed from the database by
+            # not propogating the exception
+            return
+
         if not ref_catalogue_exists(cursor, ref_image_id):
             logger.info('Reference catalogue missing, creating')
             ref_image_filename = ref_image_path(ref_image_id, cursor)
@@ -125,7 +137,11 @@ def get_refcat_id(filename):
         filename=filename))
     with open_fits(filename) as infile:
         header = infile[0].header
-    return header['agrefimg']
+
+    try:
+        return header['agrefimg']
+    except KeyError:
+        raise NoAutoguider
 
 
 def ref_image_path(ref_image_id, cursor):
