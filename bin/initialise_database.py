@@ -4,8 +4,9 @@
 from __future__ import division, print_function, absolute_import
 import argparse
 
-from ngts_transmission import (logger, connect_to_database,
-                               add_database_arguments, database_schema)
+from ngts_transmission.logs import logger
+from ngts_transmission.db import (connect_to_database_from_args, add_database_arguments,
+                                  database_schema, raw_create_table)
 
 
 def main(args):
@@ -16,16 +17,11 @@ def main(args):
     schema = database_schema()
 
     tables = {}
-    for table_name, column_defs in schema.items():
-        column_text = (', '.join([
-            ' '.join([k, v]) for (k, v) in column_defs.items()
-        ]))
-        query = 'create table {table_name} ({column_text})'.format(
-            table_name=table_name,
-            column_text=column_text)
+    for table_name in schema:
+        query = raw_create_table(table_name, schema)
         tables[table_name] = query
 
-    with connect_to_database(args) as cursor:
+    with connect_to_database_from_args(args) as cursor:
         for table_name, query in tables.items():
             cursor.execute('drop table if exists {table_name}'.format(
                 table_name=table_name))
