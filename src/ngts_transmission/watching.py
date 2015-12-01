@@ -206,7 +206,3 @@ def main():
     logger.setLevel('DEBUG')
     connection = pymysql.connect(host='ngts-par-ds', user='ops', db='ngts_ops')
     watcher(connection)
-
-
-if __name__ == '__main__':
-    main()
