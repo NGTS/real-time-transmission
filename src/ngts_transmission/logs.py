@@ -20,7 +20,7 @@ fh = RotatingFileHandler(log_filename,
 fh.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('[%(asctime)s] %(levelname)7s %(message)s')
 fh.setFormatter(formatter)
