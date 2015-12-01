@@ -2,10 +2,10 @@ import logging
 from logging.handlers import RotatingFileHandler
 from socket import gethostname
 
-if 'mbp15' in gethostname():
-    log_filename = '/tmp/transmission.log'
-else:
+if 'aux' in gethostname():
     log_filename = '/usr/local/cron/logs/transmission.log'
+else:
+    log_filename = '/tmp/transmission.log'
 
 # Maximum file size: 10MB
 maxBytes = 10 * 1024 * 1024
