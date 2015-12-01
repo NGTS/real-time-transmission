@@ -13,6 +13,7 @@ import pymysql
 import os
 from astropy.io import fits
 import time
+import Pyro4
 
 from ngts_transmission.logs import logger
 from ngts_transmission.utils import open_fits, time_context
@@ -178,9 +179,25 @@ def watcher_loop_step(connection):
 
 def watcher(connection):
     logger.info('Starting watcher')
+    logger.debug('Connecting to central hub')
+    hub = Pyro4.Proxy('PYRONAME:central.hub')
+    try:
+        hub.startThread('Transparency')
+    except Exception as err:
+        logger.exception('Cannot connect to pyro hub')
+        raise
+
     while True:
+        try:
+            logger.debug('Pinging hub')
+            hub.update_transp(time.time())
+        except Exception as err:
+            logger.exception('Failure communicating with hub process')
+            raise
+
         with time_context():
             watcher_loop_step(connection)
+
         logger.debug('Sleeping for %s seconds', SLEEP_TIME)
         time.sleep(SLEEP_TIME)
 
