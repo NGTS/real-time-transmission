@@ -48,7 +48,7 @@ AG_REFIMAGE_PATH = os.path.join('/', 'ngts', 'autoguider_ref')
 RADIUS_INNER = 4.
 RADIUS_OUTER = 8.
 
-SLEEP_TIME = 30  # Seconds
+SLEEP_TIME = 2  # Seconds
 
 
 class NoAutoguider(Exception):
