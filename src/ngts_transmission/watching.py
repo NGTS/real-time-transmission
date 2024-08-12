@@ -16,10 +16,16 @@ import time
 import Pyro4
 
 from ngts_transmission.logs import logger
-from ngts_transmission.utils import open_fits, time_context
+from ngts_transmission.utils import open_fits, time_context, get_refcat_id, NoAutoguider
 from ngts_transmission.transmission import TransmissionEntry
 from ngts_transmission.catalogue import build_catalogue
 from ngts_transmission.db import transaction
+
+# Configuration
+SLEEP_TIME = 10  # Seconds
+NJOBS_PER_LOOP = 50
+RADIUS_INNER = 4.
+RADIUS_OUTER = 8.
 
 # Limit the query to only 20 objects per 60 seconds
 SEP = '|'
@@ -31,8 +37,7 @@ where expires > now()
 and job_type = 'transparency'
 group by job_id
 order by submitted desc
-limit 20
-'''.format(sep=SEP)
+limit {njobs}'''.format(sep=SEP, njobs=NJOBS_PER_LOOP)
 
 REFCAT_QUERY = '''
 select distinct ref_image_id
@@ -44,18 +49,6 @@ select filename from autoguider_refimage where ref_image_id = %s
 '''
 
 AG_REFIMAGE_PATH = os.path.join('/', 'ngts', 'autoguider_ref')
-
-RADIUS_INNER = 4.
-RADIUS_OUTER = 8.
-
-SLEEP_TIME = 2  # Seconds
-
-
-class NoAutoguider(Exception):
-
-    def __init__(self):
-        super(NoAutoguider, self).__init__('Image is not autoguided')
-
 
 class Job(object):
 
@@ -70,7 +63,7 @@ class Job(object):
         mapping = dict([arg.split('=') for arg in args])
         return cls(job_id=job_id, filename=mapping['file'])
 
-    def update(self, cursor):
+    def update(self, connection):
         try:
             ref_image_id = get_refcat_id(self.real_filename)
         except NoAutoguider:
@@ -78,22 +71,27 @@ class Job(object):
             # not propogating the exception
             return
 
-        if not ref_catalogue_exists(cursor, ref_image_id):
-            logger.info('Reference catalogue missing, creating')
-            ref_image_filename = ref_image_path(ref_image_id, cursor)
-            build_catalogue(ref_image_filename, cursor)
-        else:
+        with connection as cursor:
+            does_refcat_exist = ref_catalogue_exists(cursor, ref_image_id)
+
+        if does_refcat_exist:
             logger.info('Reference catalogue exists')
+        else:
+            logger.info('Reference catalogue missing, creating')
+            ref_image_filename = ref_image_path(ref_image_id, connection)
+            build_catalogue(ref_image_filename, connection)
 
-        t = TransmissionEntry.from_file(self.real_filename, cursor,
-                                        sky_radius_inner=RADIUS_INNER,
-                                        sky_radius_outer=RADIUS_OUTER)
-        t.upload_to_database(cursor)
+        with connection as cursor:
+            t = TransmissionEntry.from_file(self.real_filename, cursor,
+                                            sky_radius_inner=RADIUS_INNER,
+                                            sky_radius_outer=RADIUS_OUTER)
+            t.upload_to_database(cursor)
 
-    def remove_from_database(self, cursor):
+    def remove_from_database(self, connection):
         logger.info('Removing {self} from the database'.format(self=self))
-        cursor.execute('delete from job_queue where job_id = %s',
-                       (self.job_id,))
+        with connection as cursor:
+            cursor.execute('delete from job_queue where job_id = %s',
+                           (self.job_id,))
 
     @property
     def real_filename(self):
@@ -133,26 +131,13 @@ def ref_catalogue_exists(cursor, ref_id):
     return ref_id in ref_ids
 
 
-def get_refcat_id(filename):
-    logger.debug('Extracting reference image id from {filename}'.format(
-        filename=filename))
-    with open_fits(filename) as infile:
-        header = infile[0].header
-
-    try:
-        return header['agrefimg']
-    except KeyError:
-        logger.exception('''No autoguider reference image found in file %s.
-                            Assuming this is ok and continuing.''', filename)
-        raise NoAutoguider
-
-
-def ref_image_path(ref_image_id, cursor):
-    cursor.execute(REFFILENAME_QUERY, (ref_image_id,))
-    if cursor.rowcount == 0:
-        raise KeyError('Cannot find filename for image {image_id}'.format(
-            image_id=ref_image_id))
-    row = cursor.fetchone()
+def ref_image_path(ref_image_id, connection):
+    with connection as cursor:
+        cursor.execute(REFFILENAME_QUERY, (ref_image_id,))
+        if cursor.rowcount == 0:
+            raise KeyError('Cannot find filename for image {image_id}'.format(
+                image_id=ref_image_id))
+        row = cursor.fetchone()
     return os.path.join(AG_REFIMAGE_PATH, row[0])
 
 
@@ -166,31 +151,25 @@ def watcher_loop_step(connection):
     logger.info('Found %s jobs', njobs)
 
     # Separate transaction for updating transmission database
-    with transaction(connection) as cursor:
-        for i, transmission_job in enumerate(transmission_jobs):
-            logger.info('Job %d/%d', i + 1, njobs)
-            try:
-                transmission_job.update(cursor)
-            except Exception as e:
-                logger.exception('Exception occurred: %s', str(e))
-            else:
-                transmission_job.remove_from_database(cursor)
+    for i, transmission_job in enumerate(transmission_jobs):
+        logger.info('Job %d/%d', i + 1, njobs)
+        try:
+            transmission_job.update(connection)
+        except Exception as e:
+            logger.exception('Exception occurred: %s', str(e))
+        else:
+            transmission_job.remove_from_database(connection)
 
 
 def watcher(connection):
     logger.info('Starting watcher')
     logger.debug('Connecting to central hub')
     hub = Pyro4.Proxy('PYRONAME:central.hub')
-    try:
-        hub.startThread('Transparency')
-    except Exception as err:
-        logger.exception('Cannot connect to pyro hub')
-        raise
 
     while True:
         try:
             logger.debug('Pinging hub')
-            hub.update_transp(time.time())
+            hub.report_in('transparency')
         except Exception as err:
             logger.exception('Failure communicating with hub process')
             raise

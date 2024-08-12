@@ -4,7 +4,7 @@ from astropy.io import fits
 import numpy as np
 
 from ngts_transmission.logs import logger
-from ngts_transmission.utils import open_fits
+from ngts_transmission.utils import open_fits, get_refcat_id
 from ngts_transmission.db import database_schema
 
 schema = database_schema()['transmission_log']
@@ -45,15 +45,6 @@ def photometry_local(data, x, y, aperture_radius, sky_radius_inner,
     return np.array(final_sum)
 
 
-def query_for_ref_image_id(image_id, cursor):
-    query = '''select ref_image_id from ngts_ops.autoguider_refimage
-    join ngts_ops.raw_image_list using (field, camera_id)
-    where image_id = %s'''
-
-    cursor.execute(query, (image_id,))
-    return cursor.fetchone()[0]
-
-
 class Photometry(object):
 
     def __init__(self, x, y, radius, flux):
@@ -72,8 +63,11 @@ class Photometry(object):
 
         cursor.execute(query, (ref_image_id,))
         rows = cursor.fetchall()
-        arrays = list(map(np.array, zip(*rows)))
-        return cls(*arrays)
+        if rows:
+            arrays = list(map(np.array, zip(*rows)))
+            return cls(*arrays)
+        else:
+            raise RuntimeError('No rows returned for reference image %d' % ref_image_id)
 
     @classmethod
     def extract_from_file(cls, filename, ref_catalogue, sky_radius_inner,
@@ -119,7 +113,7 @@ def extract_photometry_results_from_ref_id(filename, ref_image_id, cursor,
 def extract_photometry_results(filename, cursor, image_id, sky_radius_inner,
                                sky_radius_outer):
     '''placeholder for Max's code'''
-    ref_image_id = query_for_ref_image_id(image_id, cursor)
+    ref_image_id = get_refcat_id(filename)
     return extract_photometry_results_from_ref_id(
         filename, ref_image_id, cursor, sky_radius_inner, sky_radius_outer)
 

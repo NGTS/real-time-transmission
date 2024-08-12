@@ -159,12 +159,11 @@ def upload_info(extracted_data, cursor):
     def format_query(query_str):
         return ' '.join([line.strip() for line in query_str.split('\n')])
 
-    for row in extracted_data:
-        full_query = query.format(
-            fields=','.join(row._fields),
-            placeholders=','.join(['%s'] * len(row._fields)))
-        logger.debug('Inserting %s: %s', format_query(full_query), list(row))
-        cursor.execute(full_query, args=row)
+    first = extracted_data[0]
+    full_query = query.format(
+        fields=','.join(first._fields),
+        placeholders=','.join(['%s'] * len(first._fields)))
+    cursor.executemany(full_query, extracted_data)
 
 
 def column_type(data):
@@ -203,8 +202,7 @@ def render_fits_catalogue(data, fname):
     hdulist.writeto(fname, clobber=True)
 
 
-def build_catalogue(refimage, cursor=None,
-                    db_host=None, db_user=None, db_name=None, db_socket=None,
+def build_catalogue(refimage, connection,
                     n_pixels=2, threshold=3, fwhmfilt=1.5,
                     isolation_radius=6, aperture_radius=3,
                     region_filename=None, fits_out=None):
@@ -218,14 +216,8 @@ def build_catalogue(refimage, cursor=None,
         isolation_radius=isolation_radius,
         aperture_radius=aperture_radius))
 
-    if cursor:
+    with connection as cursor:
         upload_info(file_info, cursor)
-    else:
-        with connect_to_database(user=db_user,
-                                host=db_host,
-                                db=db_name,
-                                unix_socket=db_socket) as cursor:
-            upload_info(file_info, cursor)
 
     if fits_out is not None:
         render_fits_catalogue(file_info, fits_out)

@@ -1,9 +1,37 @@
 from contextlib import contextmanager
 import pymysql
+from pymysql.connections import Connection
 import json
 import os
 
 from ngts_transmission.logs import logger
+
+
+
+class DebugConnection(Connection):
+    logger = logger
+
+    def _log(self, *args, **kwargs):
+        if self.logger:
+            self.logger.debug(*args, **kwargs)
+
+    def __enter__(self):
+        self._log('Starting transaction')
+        return super(DebugConnection, self).__enter__()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._log('Trying to commit transaction')
+        if exc_type is not None:
+            self._log('Commit failed, rolling back')
+        else:
+            self._log('Commit ok')
+        return super(DebugConnection, self).__exit__(exc_type, exc_value, exc_traceback)
+
+    def __repr__(self):
+        return 'DEBUG %r' % repr(super(DebugConnection, self))
+
+# Monkey patch the connection object to add logging
+pymysql.connections.Connection = DebugConnection
 
 
 @contextmanager
