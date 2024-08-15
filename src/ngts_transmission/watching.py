@@ -9,6 +9,8 @@
     * extract the sources
 '''
 
+import multiprocessing as mp
+import functools
 import pymysql
 import os
 from astropy.io import fits
@@ -22,7 +24,7 @@ from ngts_transmission.catalogue import build_catalogue
 from ngts_transmission.db import transaction
 
 # Configuration
-SLEEP_TIME = 10  # Seconds
+SLEEP_TIME_IDLE = 10  # seconds
 NJOBS_PER_LOOP = 50
 RADIUS_INNER = 4.
 RADIUS_OUTER = 8.
@@ -141,7 +143,24 @@ def ref_image_path(ref_image_id, connection):
     return os.path.join(AG_REFIMAGE_PATH, row[0])
 
 
+def watcher_worker(queue):
+    connection = pymysql.connect(host='ngts-par-ds', user='ops', db='ngts_ops')
+    while not queue.empty():
+        transmission_job = queue.get()
+        try:
+            transmission_job.update(connection)
+        except Exception as e:
+            logger.exception('Exception occurred: %s', str(e))
+        else:
+            transmission_job.remove_from_database(connection)
+    connection.close()
+
+
 def watcher_loop_step(connection):
+    """
+    Fetches and processes transmission jobs.
+    Returns number of jobs processed.
+    """
     # Starts transaction for job_queue table, short lived so Paladin should not
     # have a write lock
     with transaction(connection) as cursor:
@@ -149,6 +168,16 @@ def watcher_loop_step(connection):
 
     njobs = len(transmission_jobs)
     logger.info('Found %s jobs', njobs)
+
+    # JOBS_PER_PROCESS = 5
+    # nproc = njobs // JOBS_PER_PROCESS + 1
+    # queue = mp.Queue(transmission_jobs)
+    # procs = [ mp.Process(target = watcher_worker, args = (queue,)) for _ in range(nproc) ]
+    # for p in procs:
+    #     p.start()
+    # for p in procs:
+    #     p.join()
+    # queue.close()
 
     # Separate transaction for updating transmission database
     for i, transmission_job in enumerate(transmission_jobs):
@@ -159,6 +188,8 @@ def watcher_loop_step(connection):
             logger.exception('Exception occurred: %s', str(e))
         else:
             transmission_job.remove_from_database(connection)
+
+    return njobs
 
 
 def watcher(connection):
@@ -175,10 +206,11 @@ def watcher(connection):
             raise
 
         with time_context():
-            watcher_loop_step(connection)
+            njobs = watcher_loop_step(connection)
 
-        logger.debug('Sleeping for %s seconds', SLEEP_TIME)
-        time.sleep(SLEEP_TIME)
+        if njobs == 0:
+            logger.debug('No jobs to process. Sleeping for %s seconds', SLEEP_TIME_IDLE)
+            time.sleep(SLEEP_TIME_IDLE)
 
 
 def main():
